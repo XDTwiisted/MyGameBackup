@@ -1,0 +1,44 @@
+# Unity-generated folders and files to ignore
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Mm]emoryCaptures/
+
+# Auto-generated project files
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+
+# Unity crash reports
+sysinfo.txt
+
+# Rider/JetBrains
+.idea/
+*.sln.iml
+
+# VS Code settings
+.vscode/
+
+# Builds
+*.apk
+*.aab
+*.exe
+
+# Collab & Unity cloud
+.collab/
+
+# Hidden folders like .vs or user-specific
+.vs/
+
+# Don't ignore .meta files (required by Unity)
+!/[Aa]ssets/**/*.meta
