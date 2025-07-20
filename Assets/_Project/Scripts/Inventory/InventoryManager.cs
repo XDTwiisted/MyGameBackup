@@ -23,27 +23,60 @@ public class InventoryManager : MonoBehaviour
 
     public List<InventoryEntry> inventory = new List<InventoryEntry>();
 
-    private string currentCategory = "Food";
-    private string saveKey = "InventorySaveData";
+    private string currentCategory = "Food";  // Default starting category
+    private readonly string saveKey = "InventorySaveData";
+    private readonly string categoryKey = "InventoryCurrentCategory"; // Key for saving category
 
     private void Awake()
     {
         if (Instance == null)
+        {
             Instance = this;
+            DontDestroyOnLoad(gameObject);
+
+            // Load saved category as early as possible
+            LoadCategory();
+        }
         else
+        {
             Destroy(gameObject);
+        }
     }
 
     private void Start()
     {
         LoadInventory();
-        RefreshInventoryUI();
+        // Set category after inventory loaded to sync UI and save properly
+        SetCategory(currentCategory);
     }
+
+    public string CurrentCategory => currentCategory;
 
     public void SetCategory(string category)
     {
         currentCategory = category;
+        PlayerPrefs.SetString(categoryKey, currentCategory);
+        PlayerPrefs.Save();
+
         RefreshInventoryUI();
+
+        // Highlight the correct category tab
+        if (InventoryCategoryGroup.Instance != null)
+        {
+            InventoryCategoryGroup.Instance.SetActiveCategory(currentCategory);
+        }
+    }
+
+    private void LoadCategory()
+    {
+        if (PlayerPrefs.HasKey(categoryKey))
+        {
+            currentCategory = PlayerPrefs.GetString(categoryKey);
+        }
+        else
+        {
+            currentCategory = "Food";  // Default category if nothing saved
+        }
     }
 
     public void RefreshInventoryUI()
@@ -177,5 +210,26 @@ public class InventoryManager : MonoBehaviour
                 }
             }
         }
+    }
+
+    public void ClearInventory()
+    {
+        inventory.Clear();
+        RefreshInventoryUI();
+        SaveInventory();
+        Debug.Log("Inventory has been cleared.");
+    }
+
+    public Dictionary<InventoryItemData, int> GetInventory()
+    {
+        Dictionary<InventoryItemData, int> inventoryDict = new Dictionary<InventoryItemData, int>();
+
+        foreach (var entry in inventory)
+        {
+            if (entry != null && entry.itemData != null && entry.quantity > 0)
+                inventoryDict[entry.itemData] = entry.quantity;
+        }
+
+        return inventoryDict;
     }
 }

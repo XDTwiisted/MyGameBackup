@@ -7,11 +7,19 @@ public class InventoryItemData : ScriptableObject
     public string itemID;             // Unique ID for saving/loading
     public string itemName;           // Display name
     public Sprite icon;               // UI icon sprite
-    public string category;           // e.g., "Weapon", "Tool", "Food", "Misc"
-    [TextArea]
-    public string effectDescription;  // e.g., "+25 Hunger, +10 Thirst"
 
-    [Header("Effects")]
-    public int restoreHunger;         // Amount to restore hunger (0 if none)
-    public int restoreThirst;         // Amount to restore thirst (0 if none)
+    [Tooltip("Category: Food, Tool, Weapon, Health, Misc")]
+    public string category;           // Used to filter inventory tabs
+
+    [TextArea]
+    public string description;        // Can be used for effects, crafting info, etc.
+
+    [Header("Stats for Food / Thirst / Health")]
+    public int restoreHunger;         // Restores hunger (optional)
+    public int restoreThirst;         // Restores thirst (optional)
+    public int restoreHealth;         // Restores health (optional)
+
+    [Header("Stats for Tools / Weapons")]
+    public int maxDurability;         // Optional: tools/weapons
+    public bool isDurable;            // True if item uses durability
 }

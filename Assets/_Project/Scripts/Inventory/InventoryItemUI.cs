@@ -21,7 +21,7 @@ public class InventoryItemUI : MonoBehaviour
 
         if (iconImage != null) iconImage.sprite = item.icon;
         if (nameText != null) nameText.text = item.itemName;
-        if (effectText != null) effectText.text = item.effectDescription;
+        if (effectText != null) effectText.text = item.description;
         if (quantityText != null) quantityText.text = quantity.ToString();
 
         // Updated line to avoid deprecation warning
