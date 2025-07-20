@@ -14,14 +14,15 @@ public class ExitBunkerManager : MonoBehaviour
     public TextMeshProUGUI explorationTimerText;
     public ExplorationDialogueManager explorationDialogue;
 
-
     [Header("Character")]
     public GameObject character;
+
+    [Header("Exploration")]
+    public ExplorationManager explorationManager; // Assign in Inspector
 
     private float timer = 0f;
     private bool isCountingUp = false;
     private bool isCountingDown = false;
-    private float exploreTimer = 0f;
     private bool isExploring = false;
 
     // PlayerPrefs keys
@@ -59,9 +60,18 @@ public class ExitBunkerManager : MonoBehaviour
             isCountingUp = true;
             isCountingDown = false;
             isExploring = true;
+
             explorationDialogue.StartExploration();
 
-
+            // START real-time loot generation during exploration
+            if (explorationManager != null)
+            {
+                explorationManager.StartExploring();
+            }
+            else
+            {
+                Debug.LogWarning("ExplorationManager not assigned in ExitBunkerManager.");
+            }
         });
 
         noButton.onClick.AddListener(() =>
@@ -77,7 +87,11 @@ public class ExitBunkerManager : MonoBehaviour
             returnButton.gameObject.SetActive(false);
             explorationDialogue.StopExploration();
 
-
+            // STOP real-time loot generation when returning
+            if (explorationManager != null)
+            {
+                explorationManager.StopExploring();
+            }
 
             DateTime now = DateTime.UtcNow;
             PlayerPrefs.SetString(RETURN_TIME_KEY, now.ToBinary().ToString());
@@ -111,9 +125,6 @@ public class ExitBunkerManager : MonoBehaviour
 
             UpdateTimerDisplay(timer);
         }
-
-
-
     }
 
     void UpdateTimerDisplay(float time)
@@ -131,7 +142,6 @@ public class ExitBunkerManager : MonoBehaviour
         timer = Mathf.Max(0f, timer - 3600f); // subtract 3600 seconds (1 hour), but not below zero
         UpdateTimerDisplay(timer);
     }
-
 
     void RestoreState()
     {
@@ -153,6 +163,12 @@ public class ExitBunkerManager : MonoBehaviour
                 character.SetActive(false);
                 exitBunkerButton.gameObject.SetActive(false);
                 returnButton.gameObject.SetActive(true);
+
+                // Resume real-time loot generation on restore
+                if (explorationManager != null)
+                {
+                    explorationManager.StartExploring();
+                }
             }
         }
         else if (state == "returning")
@@ -188,6 +204,12 @@ public class ExitBunkerManager : MonoBehaviour
                     character.SetActive(false);
                     exitBunkerButton.gameObject.SetActive(false);
                     returnButton.gameObject.SetActive(true);
+
+                    // Stop loot generation while returning
+                    if (explorationManager != null)
+                    {
+                        explorationManager.StopExploring();
+                    }
                 }
             }
         }
@@ -201,6 +223,12 @@ public class ExitBunkerManager : MonoBehaviour
             character.SetActive(true);
             exitBunkerButton.gameObject.SetActive(true);
             returnButton.gameObject.SetActive(false);
+
+            // Ensure loot generation is stopped when in bunker
+            if (explorationManager != null)
+            {
+                explorationManager.StopExploring();
+            }
         }
 
         UpdateTimerDisplay(timer);

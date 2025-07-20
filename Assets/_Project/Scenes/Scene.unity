@@ -1162,12 +1162,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 302684578}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1049.3708, y: 106.91574, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 513.52106, y: -1346.8267, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1301726306}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &303748557
 GameObject:
@@ -1831,6 +1831,63 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 547433864}
   m_CullTransparentMesh: 1
+--- !u!1 &593120747
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 593120749}
+  - component: {fileID: 593120748}
+  m_Layer: 0
+  m_Name: LootTableManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &593120748
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 593120747}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 08a54bfa77171104ea7cd89ff99c8768, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  possibleLoot:
+  - itemData: {fileID: 11400000, guid: 01b86bac501be2c4c8be9bbd77782cdc, type: 2}
+    minQuantity: 1
+    maxQuantity: 3
+    dropChance: 0.15
+  - itemData: {fileID: 11400000, guid: 8cbfa55c235666c4aac7d971abda5883, type: 2}
+    minQuantity: 1
+    maxQuantity: 1
+    dropChance: 0.1
+  - itemData: {fileID: 11400000, guid: 8312d1e7e624f604ca6d9dd5bb08ac53, type: 2}
+    minQuantity: 1
+    maxQuantity: 1
+    dropChance: 0.1
+--- !u!4 &593120749
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 593120747}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 398.72162, y: 897.70215, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &603877917
 GameObject:
   m_ObjectHideFlags: 0
@@ -2221,17 +2278,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemSlotPrefab: {fileID: 435736950036133621, guid: 004aaf3b1190a224f932310c60701bcc, type: 3}
   contentParent: {fileID: 264743695}
-  allItems:
-  - itemID: 
-    itemName: Cherries
-    icon: {fileID: 21300000, guid: bdce2a9cb3d0242958c2593a3b8d8742, type: 3}
-    category: Food
-    effectDescription: +10 Hunger +5 Thirst
-    effectValue: 0
-    effectType: 
-    quantity: 2
-    restoreHunger: 10
-    restoreThirst: 5
+  inventory:
+  - itemData: {fileID: 0}
+    quantity: 0
 --- !u!4 &751218127
 Transform:
   m_ObjectHideFlags: 0
@@ -2240,12 +2289,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 751218125}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1043.5605, y: 992.1742, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 507.71075, y: -461.56824, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1301726306}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &790980680
 GameObject:
@@ -3114,12 +3163,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 976594989}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 728.4254, y: 918.56866, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 192.57562, y: -535.17377, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1301726306}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &983264843
 GameObject:
@@ -3950,6 +3999,9 @@ Transform:
   - {fileID: 1962700684}
   - {fileID: 420977137}
   - {fileID: 603877919}
+  - {fileID: 751218127}
+  - {fileID: 302684580}
+  - {fileID: 976594991}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1304079254
@@ -5837,6 +5889,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1771302599}
   m_CullTransparentMesh: 1
+--- !u!1 &1898766164
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1898766166}
+  - component: {fileID: 1898766165}
+  m_Layer: 0
+  m_Name: ExplorationManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1898766165
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1898766164}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b91dfa4baa00304b95c68ebb68d149e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lootTable: {fileID: 593120748}
+  lootTickInterval: 10
+--- !u!4 &1898766166
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1898766164}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 468.875, y: 897.04565, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1921100193
 GameObject:
   m_ObjectHideFlags: 0
@@ -6038,6 +6136,7 @@ MonoBehaviour:
   explorationTimerText: {fileID: 1734774794}
   explorationDialogue: {fileID: 603877918}
   character: {fileID: 1924032060}
+  explorationManager: {fileID: 1898766165}
 --- !u!4 &1962700684
 Transform:
   m_ObjectHideFlags: 0
@@ -6052,6 +6151,51 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1301726306}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1968170880
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1968170882}
+  - component: {fileID: 1968170881}
+  m_Layer: 0
+  m_Name: LootTest
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1968170881
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1968170880}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94f679617abd4ae41a70f7b6db70085e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lootTable: {fileID: 593120748}
+--- !u!4 &1968170882
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1968170880}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 398.72162, y: 897.70215, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2020816795
 GameObject:
@@ -6353,6 +6497,6 @@ SceneRoots:
   - {fileID: 1333809561}
   - {fileID: 1301726306}
   - {fileID: 2650753}
-  - {fileID: 751218127}
-  - {fileID: 302684580}
-  - {fileID: 976594991}
+  - {fileID: 593120749}
+  - {fileID: 1968170882}
+  - {fileID: 1898766166}

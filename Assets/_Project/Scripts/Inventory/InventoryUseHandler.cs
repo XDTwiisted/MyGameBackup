@@ -12,31 +12,17 @@ public class InventoryUseHandler : MonoBehaviour
             return;
         }
 
-        // Apply hunger restoration if any
+        // Apply item effects
         if (item.restoreHunger > 0)
-        {
             playerStats.RestoreHunger(item.restoreHunger);
-        }
 
-        // Apply thirst restoration if any
         if (item.restoreThirst > 0)
-        {
             playerStats.RestoreThirst(item.restoreThirst);
-        }
 
-        // Decrease quantity
-        item.quantity--;
-
-        // Remove from list if quantity is 0 or less
-        if (item.quantity <= 0 && InventoryManager.Instance != null)
-        {
-            InventoryManager.Instance.allItems.Remove(item);
-        }
-
-        // Refresh UI
+        // Reduce quantity via InventoryManager
         if (InventoryManager.Instance != null)
         {
-            InventoryManager.Instance.RefreshInventoryUI();
+            InventoryManager.Instance.UseItem(item);
         }
     }
 }

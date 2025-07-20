@@ -1,16 +1,17 @@
 using UnityEngine;
 
-[System.Serializable]
-public class InventoryItemData
+[CreateAssetMenu(menuName = "Inventory/ItemData")]
+public class InventoryItemData : ScriptableObject
 {
-    public string itemID;             // Unique ID for the item
+    [Header("Basic Info")]
+    public string itemID;             // Unique ID for saving/loading
     public string itemName;           // Display name
     public Sprite icon;               // UI icon sprite
     public string category;           // e.g., "Weapon", "Tool", "Food", "Misc"
+    [TextArea]
     public string effectDescription;  // e.g., "+25 Hunger, +10 Thirst"
-    public int quantity;              // How many the player has
 
-    // Stat effects — multiple can apply simultaneously
+    [Header("Effects")]
     public int restoreHunger;         // Amount to restore hunger (0 if none)
     public int restoreThirst;         // Amount to restore thirst (0 if none)
 }
