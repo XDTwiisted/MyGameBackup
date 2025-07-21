@@ -4,9 +4,9 @@ public class InventoryEntry
     public InventoryItemData itemData;
     public int quantity;
 
-    public InventoryEntry(InventoryItemData data, int qty)
+    public InventoryEntry(InventoryItemData itemData, int quantity)
     {
-        itemData = data;
-        quantity = qty;
+        this.itemData = itemData;
+        this.quantity = quantity;
     }
 }

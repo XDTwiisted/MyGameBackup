@@ -16,6 +16,9 @@ MonoBehaviour:
   itemName: Cherry
   icon: {fileID: 21300000, guid: bf7bb96fa1c415b4fb03ff227c934adc, type: 3}
   category: Food
-  effectDescription: +5 Hunger
+  description: +5 Hunger
   restoreHunger: 5
   restoreThirst: 0
+  restoreHealth: 0
+  maxDurability: 0
+  isDurable: 0

@@ -12,30 +12,42 @@ public class ExplorationManager : MonoBehaviour
 
     private const string LastExplorationStartTimeKey = "LastExplorationStartTime";
 
-    // Call this method to start exploration and loot generation
+    // Reference to ExplorationDialogueManager to notify when items are found
+    public ExplorationDialogueManager explorationDialogueManager;
+
+    /// <summary>
+    /// Call this method to start exploration and loot generation.
+    /// </summary>
     public void StartExploring()
     {
         isExploring = true;
         lootTimer = 0f;
         Debug.Log("Exploration started.");
 
-        // Handle offline loot on exploration start
         HandleOfflineLoot();
 
-        // Save the start time for offline calculations
+        // Save the current UTC time for offline calculations
         PlayerPrefs.SetString(LastExplorationStartTimeKey, DateTime.UtcNow.ToBinary().ToString());
         PlayerPrefs.Save();
     }
 
-    // Call this method to stop exploration and loot generation
+    /// <summary>
+    /// Call this method to stop exploration and loot generation.
+    /// </summary>
     public void StopExploring()
     {
         isExploring = false;
         Debug.Log("Exploration stopped.");
 
-        // Remove the saved start time when exploration stops
+        // Remove saved start time to reset offline loot calculation
         PlayerPrefs.DeleteKey(LastExplorationStartTimeKey);
         PlayerPrefs.Save();
+
+        // Clear any pending found item messages in dialogue
+        if (explorationDialogueManager != null)
+        {
+            explorationDialogueManager.ClearFoundItemsQueue();
+        }
     }
 
     private void Update()
@@ -52,6 +64,10 @@ public class ExplorationManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Generates loot by rolling the loot table and adds found items to inventory,
+    /// then immediately notifies the dialogue manager to show found item messages.
+    /// </summary>
     private void GenerateLoot()
     {
         if (lootTable == null)
@@ -87,9 +103,21 @@ public class ExplorationManager : MonoBehaviour
 
             InventoryManager.Instance.AddItem(loot.itemData, quantityToAdd);
             Debug.Log($"Found {quantityToAdd}x {loot.itemData.itemName} while exploring!");
+
+            // Notify dialogue manager immediately
+            if (explorationDialogueManager != null)
+            {
+                for (int i = 0; i < quantityToAdd; i++)
+                {
+                    explorationDialogueManager.FoundItem(loot.itemData.itemName);
+                }
+            }
         }
     }
 
+    /// <summary>
+    /// Generates loot ticks based on offline duration since last exploration start.
+    /// </summary>
     private void HandleOfflineLoot()
     {
         if (!PlayerPrefs.HasKey(LastExplorationStartTimeKey))
@@ -106,7 +134,7 @@ public class ExplorationManager : MonoBehaviour
         if (offlineTicks <= 0)
             return;
 
-        Debug.Log($"Generating {offlineTicks} offline loot ticks based on offline duration {offlineDuration.TotalSeconds} seconds.");
+        Debug.Log($"Generating {offlineTicks} offline loot ticks based on offline duration {offlineDuration.TotalSeconds:F1} seconds.");
 
         for (int i = 0; i < offlineTicks; i++)
         {

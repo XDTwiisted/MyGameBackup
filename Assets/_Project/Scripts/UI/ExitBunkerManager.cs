@@ -2,14 +2,12 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System;
+using System.Collections.Generic;
 
 public class ExitBunkerManager : MonoBehaviour
 {
     [Header("UI Elements")]
-    public GameObject confirmationPanel;
     public Button exitBunkerButton;
-    public Button yesButton;
-    public Button noButton;
     public Button returnButton;
     public TextMeshProUGUI explorationTimerText;
     public ExplorationDialogueManager explorationDialogue;
@@ -18,66 +16,25 @@ public class ExitBunkerManager : MonoBehaviour
     public GameObject character;
 
     [Header("Exploration")]
-    public ExplorationManager explorationManager; // Assign in Inspector
+    public ExplorationManager explorationManager;
+    public LootTable lootTable;
 
     private float timer = 0f;
     private bool isCountingUp = false;
     private bool isCountingDown = false;
     private bool isExploring = false;
 
-    // PlayerPrefs keys
-    private const string STATE_KEY = "gameState"; // "bunker", "exploring", "returning"
+    private const string STATE_KEY = "gameState";
     private const string EXPLORE_TIME_KEY = "explorationStartTime";
     private const string RETURN_TIME_KEY = "returnStartTime";
     private const string RETURN_DURATION_KEY = "returnDuration";
 
     void Start()
     {
-        confirmationPanel.SetActive(false);
         returnButton.gameObject.SetActive(false);
         explorationTimerText.text = "Time Outside: 00:00";
 
         RestoreState();
-
-        exitBunkerButton.onClick.AddListener(() =>
-        {
-            confirmationPanel.SetActive(true);
-        });
-
-        yesButton.onClick.AddListener(() =>
-        {
-            confirmationPanel.SetActive(false);
-            character.SetActive(false);
-            exitBunkerButton.gameObject.SetActive(false);
-            returnButton.gameObject.SetActive(true);
-
-            DateTime now = DateTime.UtcNow;
-            PlayerPrefs.SetString(EXPLORE_TIME_KEY, now.ToBinary().ToString());
-            PlayerPrefs.SetString(STATE_KEY, "exploring");
-            PlayerPrefs.Save();
-
-            timer = 0f;
-            isCountingUp = true;
-            isCountingDown = false;
-            isExploring = true;
-
-            explorationDialogue.StartExploration();
-
-            // START real-time loot generation during exploration
-            if (explorationManager != null)
-            {
-                explorationManager.StartExploring();
-            }
-            else
-            {
-                Debug.LogWarning("ExplorationManager not assigned in ExitBunkerManager.");
-            }
-        });
-
-        noButton.onClick.AddListener(() =>
-        {
-            confirmationPanel.SetActive(false);
-        });
 
         returnButton.onClick.AddListener(() =>
         {
@@ -85,9 +42,12 @@ public class ExitBunkerManager : MonoBehaviour
             isCountingDown = true;
             isExploring = false;
             returnButton.gameObject.SetActive(false);
-            explorationDialogue.StopExploration();
 
-            // STOP real-time loot generation when returning
+            if (explorationDialogue != null)
+            {
+                explorationDialogue.StopExploration();  // Stop dialogue updates but keep showing current text
+            }
+
             if (explorationManager != null)
             {
                 explorationManager.StopExploring();
@@ -99,6 +59,47 @@ public class ExitBunkerManager : MonoBehaviour
             PlayerPrefs.SetString(STATE_KEY, "returning");
             PlayerPrefs.Save();
         });
+    }
+
+    public void StartExploration()
+    {
+        character.SetActive(false);
+        exitBunkerButton.gameObject.SetActive(false);
+        returnButton.gameObject.SetActive(true);
+
+        DateTime now = DateTime.UtcNow;
+        PlayerPrefs.SetString(EXPLORE_TIME_KEY, now.ToBinary().ToString());
+        PlayerPrefs.SetString(STATE_KEY, "exploring");
+        PlayerPrefs.Save();
+
+        timer = 0f;
+        isCountingUp = true;
+        isCountingDown = false;
+        isExploring = true;
+
+        if (explorationDialogue != null)
+        {
+            explorationDialogue.StartExploration();
+        }
+
+        if (explorationManager != null)
+        {
+            explorationManager.StartExploring();
+
+            if (lootTable != null)
+            {
+                List<LootItem> newLoot = lootTable.GetLoot();
+                // Optionally process newLoot
+            }
+            else
+            {
+                Debug.LogWarning("LootTable not assigned in ExitBunkerManager.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("ExplorationManager not assigned in ExitBunkerManager.");
+        }
     }
 
     void Update()
@@ -121,6 +122,11 @@ public class ExitBunkerManager : MonoBehaviour
                 exitBunkerButton.gameObject.SetActive(true);
                 PlayerPrefs.SetString(STATE_KEY, "bunker");
                 PlayerPrefs.Save();
+
+                if (explorationDialogue != null)
+                {
+                    explorationDialogue.ClearDialogue();  // Clear dialogue when return finishes
+                }
             }
 
             UpdateTimerDisplay(timer);
@@ -139,7 +145,7 @@ public class ExitBunkerManager : MonoBehaviour
 
     public void SpeedUpReturnByOneHour()
     {
-        timer = Mathf.Max(0f, timer - 3600f); // subtract 3600 seconds (1 hour), but not below zero
+        timer = Mathf.Max(0f, timer - 3600f);
         UpdateTimerDisplay(timer);
     }
 
@@ -164,10 +170,14 @@ public class ExitBunkerManager : MonoBehaviour
                 exitBunkerButton.gameObject.SetActive(false);
                 returnButton.gameObject.SetActive(true);
 
-                // Resume real-time loot generation on restore
                 if (explorationManager != null)
                 {
                     explorationManager.StartExploring();
+                }
+
+                if (explorationDialogue != null)
+                {
+                    explorationDialogue.StartExploration();
                 }
             }
         }
@@ -193,6 +203,11 @@ public class ExitBunkerManager : MonoBehaviour
                     returnButton.gameObject.SetActive(false);
                     PlayerPrefs.SetString(STATE_KEY, "bunker");
                     PlayerPrefs.Save();
+
+                    if (explorationDialogue != null)
+                    {
+                        explorationDialogue.ClearDialogue();  // Clear dialogue here as well
+                    }
                 }
                 else
                 {
@@ -205,43 +220,28 @@ public class ExitBunkerManager : MonoBehaviour
                     exitBunkerButton.gameObject.SetActive(false);
                     returnButton.gameObject.SetActive(true);
 
-                    // Stop loot generation while returning
-                    if (explorationManager != null)
+                    if (explorationDialogue != null)
                     {
-                        explorationManager.StopExploring();
+                        explorationDialogue.StopExploration();  // Stop dialogue updates but keep current text visible
                     }
                 }
             }
         }
         else
         {
-            isCountingUp = false;
-            isCountingDown = false;
-            isExploring = false;
             timer = 0f;
+            isCountingDown = false;
+            isCountingUp = false;
+            isExploring = false;
 
             character.SetActive(true);
             exitBunkerButton.gameObject.SetActive(true);
             returnButton.gameObject.SetActive(false);
 
-            // Ensure loot generation is stopped when in bunker
-            if (explorationManager != null)
+            if (explorationDialogue != null)
             {
-                explorationManager.StopExploring();
+                explorationDialogue.ClearDialogue();  // Clear dialogue in bunker state
             }
         }
-
-        UpdateTimerDisplay(timer);
-    }
-
-    void OnApplicationQuit()
-    {
-        PlayerPrefs.Save();
-    }
-
-    void OnApplicationPause(bool pauseStatus)
-    {
-        if (pauseStatus)
-            PlayerPrefs.Save();
     }
 }

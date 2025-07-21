@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0ecf09ba94573a04d81de6931d8ca7d2, type: 3}
-  m_Name: Bread
+  m_Name: Shovel
   m_EditorClassIdentifier: 
-  itemID: bread_01
-  itemName: Bread
-  icon: {fileID: 21300000, guid: c728868677dfad541b6543a1f2aec055, type: 3}
-  category: Food
-  description: +10 Hunger
-  restoreHunger: 10
+  itemID: shovel_01
+  itemName: Shovel
+  icon: {fileID: 21300000, guid: 444052b880bd55e4398509786280e978, type: 3}
+  category: Tools
+  description: useful
+  restoreHunger: 0
   restoreThirst: 0
   restoreHealth: 0
-  maxDurability: 0
-  isDurable: 0
+  maxDurability: 10
+  isDurable: 1

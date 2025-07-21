@@ -18,14 +18,25 @@ public class InventoryManager : MonoBehaviour
 {
     public static InventoryManager Instance { get; private set; }
 
+    [Header("Prefabs")]
     public GameObject itemSlotPrefab;
     public Transform contentParent;
+
+    [Header("Category Headers")]
+    public GameObject foodHeaderPrefab;
+    public GameObject healthHeaderPrefab;
+    public GameObject thirstHeaderPrefab;
+    public GameObject miscHeaderPrefab;
+    public GameObject toolsHeaderPrefab;
+    public GameObject weaponsHeaderPrefab;
 
     public List<InventoryEntry> inventory = new List<InventoryEntry>();
 
     private string currentCategory = "Food";  // Default starting category
     private readonly string saveKey = "InventorySaveData";
-    private readonly string categoryKey = "InventoryCurrentCategory"; // Key for saving category
+    private readonly string categoryKey = "InventoryCurrentCategory";
+
+    private Dictionary<string, GameObject> headerPrefabs;
 
     private void Awake()
     {
@@ -33,9 +44,8 @@ public class InventoryManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-
-            // Load saved category as early as possible
             LoadCategory();
+            InitializeHeaderMap();
         }
         else
         {
@@ -46,8 +56,20 @@ public class InventoryManager : MonoBehaviour
     private void Start()
     {
         LoadInventory();
-        // Set category after inventory loaded to sync UI and save properly
         SetCategory(currentCategory);
+    }
+
+    private void InitializeHeaderMap()
+    {
+        headerPrefabs = new Dictionary<string, GameObject>
+        {
+            { "Food", foodHeaderPrefab },
+            { "Thirst", thirstHeaderPrefab },
+            { "Health", healthHeaderPrefab },
+            { "Misc", miscHeaderPrefab },
+            { "Tools", toolsHeaderPrefab },
+            { "Weapons", weaponsHeaderPrefab }
+        };
     }
 
     public string CurrentCategory => currentCategory;
@@ -60,7 +82,6 @@ public class InventoryManager : MonoBehaviour
 
         RefreshInventoryUI();
 
-        // Highlight the correct category tab
         if (InventoryCategoryGroup.Instance != null)
         {
             InventoryCategoryGroup.Instance.SetActiveCategory(currentCategory);
@@ -69,27 +90,16 @@ public class InventoryManager : MonoBehaviour
 
     private void LoadCategory()
     {
-        if (PlayerPrefs.HasKey(categoryKey))
-        {
-            currentCategory = PlayerPrefs.GetString(categoryKey);
-        }
-        else
-        {
-            currentCategory = "Food";  // Default category if nothing saved
-        }
+        currentCategory = PlayerPrefs.HasKey(categoryKey)
+            ? PlayerPrefs.GetString(categoryKey)
+            : "Food";
     }
 
     public void RefreshInventoryUI()
     {
-        if (contentParent == null)
+        if (contentParent == null || itemSlotPrefab == null)
         {
-            Debug.LogError("InventoryManager: contentParent is NOT assigned in the Inspector!");
-            return;
-        }
-
-        if (itemSlotPrefab == null)
-        {
-            Debug.LogError("InventoryManager: itemSlotPrefab is NOT assigned in the Inspector!");
+            Debug.LogError("InventoryManager: Missing contentParent or itemSlotPrefab.");
             return;
         }
 
@@ -98,13 +108,17 @@ public class InventoryManager : MonoBehaviour
             Destroy(child.gameObject);
         }
 
+        Debug.Log($"Refreshing Inventory UI (Category: {currentCategory})");
+
+        // Instantiate header (if any for this category)
+        if (headerPrefabs != null && headerPrefabs.TryGetValue(currentCategory, out GameObject headerPrefab) && headerPrefab != null)
+        {
+            Instantiate(headerPrefab, contentParent);
+        }
+
         foreach (var entry in inventory)
         {
-            if (entry == null || entry.itemData == null)
-            {
-                Debug.LogWarning("InventoryManager: Skipping null entry or itemData.");
-                continue;
-            }
+            if (entry?.itemData == null) continue;
 
             if (entry.itemData.category == currentCategory && entry.quantity > 0)
             {
@@ -114,30 +128,27 @@ public class InventoryManager : MonoBehaviour
                 {
                     itemUI.Setup(entry.itemData, entry.quantity);
                 }
-                else
-                {
-                    Debug.LogError("InventoryManager: itemSlotPrefab is missing InventoryItemUI script!");
-                }
             }
         }
     }
 
     public void AddItem(InventoryItemData itemData, int quantity)
     {
-        if (itemData == null)
+        if (itemData == null) return;
+
+        bool found = false;
+
+        foreach (var entry in inventory)
         {
-            Debug.LogError("InventoryManager: Tried to add null itemData.");
-            return;
+            if (entry != null && entry.itemData == itemData)
+            {
+                entry.quantity += quantity;
+                found = true;
+                break;
+            }
         }
 
-        Debug.Log($"InventoryManager: Adding item '{itemData.itemName}' x{quantity}");
-
-        var existingEntry = inventory.Find(entry => entry.itemData == itemData);
-        if (existingEntry != null)
-        {
-            existingEntry.quantity += quantity;
-        }
-        else
+        if (!found)
         {
             inventory.Add(new InventoryEntry(itemData, quantity));
         }
@@ -173,7 +184,7 @@ public class InventoryManager : MonoBehaviour
 
         foreach (var entry in inventory)
         {
-            if (entry != null && entry.itemData != null)
+            if (entry?.itemData != null)
             {
                 saveData.items.Add(new InventoryItemSave
                 {
@@ -204,10 +215,6 @@ public class InventoryManager : MonoBehaviour
                 {
                     inventory.Add(new InventoryEntry(itemData, item.quantity));
                 }
-                else
-                {
-                    Debug.LogWarning($"InventoryManager: Item not found in database: {item.itemName}");
-                }
             }
         }
     }
@@ -217,19 +224,20 @@ public class InventoryManager : MonoBehaviour
         inventory.Clear();
         RefreshInventoryUI();
         SaveInventory();
-        Debug.Log("Inventory has been cleared.");
     }
 
     public Dictionary<InventoryItemData, int> GetInventory()
     {
-        Dictionary<InventoryItemData, int> inventoryDict = new Dictionary<InventoryItemData, int>();
+        Dictionary<InventoryItemData, int> dict = new Dictionary<InventoryItemData, int>();
 
         foreach (var entry in inventory)
         {
-            if (entry != null && entry.itemData != null && entry.quantity > 0)
-                inventoryDict[entry.itemData] = entry.quantity;
+            if (entry?.itemData != null && entry.quantity > 0)
+            {
+                dict[entry.itemData] = entry.quantity;
+            }
         }
 
-        return inventoryDict;
+        return dict;
     }
 }

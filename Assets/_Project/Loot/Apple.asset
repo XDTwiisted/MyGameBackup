@@ -16,6 +16,9 @@ MonoBehaviour:
   itemName: Apple
   icon: {fileID: 21300000, guid: 61d01e8616313344b978a6518fd86ed6, type: 3}
   category: Food
-  effectDescription: +5 Hunger +5 Thirst
+  description: +5 Hunger +2 Thirst
   restoreHunger: 5
   restoreThirst: 2
+  restoreHealth: 0
+  maxDurability: 0
+  isDurable: 0
