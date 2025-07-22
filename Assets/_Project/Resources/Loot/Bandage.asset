@@ -22,3 +22,7 @@ MonoBehaviour:
   restoreHealth: 10
   maxDurability: 0
   isDurable: 0
+  rarity: 0
+  dropChance: 0.134
+  minQuantity: 1
+  maxQuantity: 1

@@ -10,15 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0ecf09ba94573a04d81de6931d8ca7d2, type: 3}
-  m_Name: Pistol
+  m_Name: Bacon
   m_EditorClassIdentifier: 
-  itemID: pistol_01
-  itemName: Pistol
-  icon: {fileID: 21300000, guid: 1616e4908b7c0284997f328329c92b1b, type: 3}
-  category: Weapons
-  description: better than nothing
-  restoreHunger: 0
+  itemID: bacon_01
+  itemName: Bacon
+  icon: {fileID: 21300000, guid: 0b9e159b363a1ff4f8982693963e393d, type: 3}
+  category: Food
+  description: +10 Hunger
+  restoreHunger: 10
   restoreThirst: 0
   restoreHealth: 0
-  maxDurability: 100
-  isDurable: 1
+  maxDurability: 0
+  isDurable: 0
+  rarity: 0
+  dropChance: 0.38
+  minQuantity: 1
+  maxQuantity: 1

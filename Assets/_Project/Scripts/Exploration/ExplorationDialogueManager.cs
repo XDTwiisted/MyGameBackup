@@ -38,14 +38,19 @@ public class ExplorationDialogueManager : MonoBehaviour
 
     private bool isExploring = false;
     private bool showingFoundItem = false;
-    private Queue<string> foundItemQueue = new Queue<string>();
+
+    // Now store full InventoryItemData instead of just names
+    private Queue<InventoryItemData> foundItemQueue = new Queue<InventoryItemData>();
 
     // Delay before starting dialogue
     public float startDelay = 8f;
     private float delayTimer = 0f;
     private bool delayPassed = false;
 
-    void Update()
+    // Removed original Update()
+
+    // New method: call this every frame with scaled deltaTime
+    public void UpdateDialogue(float deltaTime)
     {
         if (!isExploring)
             return;
@@ -53,7 +58,7 @@ public class ExplorationDialogueManager : MonoBehaviour
         // Wait until delay passes before showing dialogue lines
         if (!delayPassed)
         {
-            delayTimer += Time.deltaTime;
+            delayTimer += deltaTime;
             if (delayTimer >= startDelay)
             {
                 delayPassed = true;
@@ -69,7 +74,7 @@ public class ExplorationDialogueManager : MonoBehaviour
         if (showingFoundItem)
             return;
 
-        dialogueTimer += Time.deltaTime;
+        dialogueTimer += deltaTime;
 
         if (dialogueTimer >= dialogueInterval)
         {
@@ -84,7 +89,7 @@ public class ExplorationDialogueManager : MonoBehaviour
         delayPassed = false;
         delayTimer = 0f;
         dialogueTimer = 0f;
-        // Don't show dialogue immediately; wait for delay in Update()
+        // Don't show dialogue immediately; wait for delay in UpdateDialogue()
     }
 
     public void StopExploration()
@@ -114,9 +119,12 @@ public class ExplorationDialogueManager : MonoBehaviour
         AddMessageToHistory(formattedLine);
     }
 
-    public void FoundItem(string itemName)
+    // Updated to accept InventoryItemData and show colored + bold text based on rarity
+    public void FoundItem(InventoryItemData itemData)
     {
-        foundItemQueue.Enqueue(itemName);
+        if (itemData == null) return;
+
+        foundItemQueue.Enqueue(itemData);
 
         if (!showingFoundItem)
         {
@@ -130,9 +138,14 @@ public class ExplorationDialogueManager : MonoBehaviour
 
         while (foundItemQueue.Count > 0)
         {
-            string currentItem = foundItemQueue.Dequeue();
+            InventoryItemData currentItem = foundItemQueue.Dequeue();
             string currentTime = DateTime.Now.ToString("h:mm tt");
-            string foundMessage = $"[{currentTime}] I found <color=#00FF00>{currentItem}</color>!";
+
+            // Get color hex based on rarity
+            string colorHex = GetColorForRarity(currentItem.rarity);
+
+            // Wrap itemName in bold and color tags
+            string foundMessage = $"[{currentTime}] I found <color={colorHex}><b>{currentItem.itemName}</b></color>!";
 
             AddMessageToHistory(foundMessage);
 
@@ -141,6 +154,24 @@ public class ExplorationDialogueManager : MonoBehaviour
 
         showingFoundItem = false;
         dialogueTimer = 0f;
+    }
+
+    // Maps rarity enum to hex color codes
+    private string GetColorForRarity(ItemRarity rarity)
+    {
+        switch (rarity)
+        {
+            case ItemRarity.Common:
+                return "#FFFFFF"; // White
+            case ItemRarity.Uncommon:
+                return "#00FF00"; // Green
+            case ItemRarity.Rare:
+                return "#800080"; // Purple
+            case ItemRarity.Legendary:
+                return "#FFA500"; // Orange
+            default:
+                return "#FFFFFF"; // Default white
+        }
     }
 
     void AddMessageToHistory(string message)

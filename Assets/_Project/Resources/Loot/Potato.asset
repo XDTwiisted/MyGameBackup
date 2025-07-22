@@ -10,15 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0ecf09ba94573a04d81de6931d8ca7d2, type: 3}
-  m_Name: Cherry
+  m_Name: Potato
   m_EditorClassIdentifier: 
-  itemID: cherry_01
-  itemName: Cherry
-  icon: {fileID: 21300000, guid: bf7bb96fa1c415b4fb03ff227c934adc, type: 3}
+  itemID: potato_01
+  itemName: Potato
+  icon: {fileID: 21300000, guid: 7dd21f826a119274bb085376073e5cbd, type: 3}
   category: Food
-  description: +5 Hunger
-  restoreHunger: 5
+  description: +8 Hunger
+  restoreHunger: 8
   restoreThirst: 0
   restoreHealth: 0
   maxDurability: 0
   isDurable: 0
+  rarity: 0
+  dropChance: 0.1
+  minQuantity: 1
+  maxQuantity: 1

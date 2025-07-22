@@ -66,7 +66,7 @@ public class ExplorationManager : MonoBehaviour
 
     /// <summary>
     /// Generates loot by rolling the loot table and adds found items to inventory,
-    /// then immediately notifies the dialogue manager to show found item messages.
+    /// then immediately notifies the dialogue manager to show found item messages with colors.
     /// </summary>
     private void GenerateLoot()
     {
@@ -104,12 +104,12 @@ public class ExplorationManager : MonoBehaviour
             InventoryManager.Instance.AddItem(loot.itemData, quantityToAdd);
             Debug.Log($"Found {quantityToAdd}x {loot.itemData.itemName} while exploring!");
 
-            // Notify dialogue manager immediately
+            // Notify dialogue manager immediately with full InventoryItemData (for colored text)
             if (explorationDialogueManager != null)
             {
                 for (int i = 0; i < quantityToAdd; i++)
                 {
-                    explorationDialogueManager.FoundItem(loot.itemData.itemName);
+                    explorationDialogueManager.FoundItem(loot.itemData);
                 }
             }
         }

@@ -29,7 +29,11 @@ public class InventoryItemUI : MonoBehaviour
             iconImage.sprite = item.icon;
 
         if (nameText != null)
+        {
             nameText.text = item.itemName;
+            // Keep default text color — remove rarity color change
+            // nameText.color = GetRarityColor(item.rarity);
+        }
 
         if (effectText != null)
             effectText.text = item.description;
@@ -94,5 +98,26 @@ public class InventoryItemUI : MonoBehaviour
         currentQuantity = newQuantity;
         if (quantityText != null)
             quantityText.text = newQuantity.ToString();
+    }
+
+    /// <summary>
+    /// Returns a color based on the item rarity.
+    /// Customize as you like.
+    /// </summary>
+    private Color GetRarityColor(ItemRarity rarity)
+    {
+        switch (rarity)
+        {
+            case ItemRarity.Common:
+                return Color.white;  // white or grey?
+            case ItemRarity.Uncommon:
+                return Color.green;
+            case ItemRarity.Rare:
+                return new Color(0.6f, 0f, 0.8f); // purple
+            case ItemRarity.Legendary:
+                return new Color(1f, 0.64f, 0f);  // orange/yellow
+            default:
+                return Color.white;
+        }
     }
 }
