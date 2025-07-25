@@ -9,7 +9,7 @@ public class ExitBunkerManager : MonoBehaviour
     [Header("UI Elements")]
     public Button exitBunkerButton;
     public Button returnButton;
-    public Button subtractOneHourButton;  // Your -1 hour button
+    public Button subtractOneHourButton;
     public TextMeshProUGUI explorationTimerText;
     public Slider staminaBar;
 
@@ -29,8 +29,8 @@ public class ExitBunkerManager : MonoBehaviour
 
     private float currentStamina;
     private float timer = 0f;
-    private bool isCountingUp = false;    // Exploring
-    private bool isCountingDown = false;  // Returning
+    private bool isCountingUp = false;
+    private bool isCountingDown = false;
     private bool isExploring = false;
     private bool isHoldingScreen = false;
 
@@ -38,6 +38,8 @@ public class ExitBunkerManager : MonoBehaviour
     private const string EXPLORE_TIME_KEY = "explorationStartTime";
     private const string RETURN_TIME_KEY = "returnStartTime";
     private const string RETURN_DURATION_KEY = "returnDuration";
+
+    public float CurrentSpeedMultiplier => isHoldingScreen && currentStamina > 0f ? speedMultiplier : 1f;
 
     void Start()
     {
@@ -87,9 +89,6 @@ public class ExitBunkerManager : MonoBehaviour
         if (explorationManager != null)
         {
             explorationManager.StartExploring();
-
-            if (lootTable != null)
-                lootTable.GetLoot();
         }
     }
 
@@ -99,15 +98,15 @@ public class ExitBunkerManager : MonoBehaviour
 
         if (isCountingUp)
         {
-            float effectiveDelta = Time.deltaTime * (isHoldingScreen && currentStamina > 0f ? speedMultiplier : 1f);
+            float effectiveDelta = Time.deltaTime * CurrentSpeedMultiplier;
             timer += effectiveDelta;
             UpdateTimerDisplay(timer);
 
             if (explorationDialogue != null)
                 explorationDialogue.UpdateDialogue(effectiveDelta);
 
-            if (lootTable != null)
-                lootTable.UpdateLoot(effectiveDelta);
+            if (explorationManager != null)
+                explorationManager.AdvanceExplorationTime(effectiveDelta);
 
             if (isHoldingScreen && currentStamina > 0f)
                 currentStamina -= staminaDrainRate * Time.deltaTime;
@@ -119,7 +118,7 @@ public class ExitBunkerManager : MonoBehaviour
         }
         else if (isCountingDown)
         {
-            float effectiveDelta = Time.deltaTime * (isHoldingScreen && currentStamina > 0f ? speedMultiplier : 1f);
+            float effectiveDelta = Time.deltaTime * CurrentSpeedMultiplier;
             timer -= effectiveDelta;
 
             if (isHoldingScreen && currentStamina > 0f)
@@ -281,7 +280,7 @@ public class ExitBunkerManager : MonoBehaviour
                 PlayerPrefs.Save();
             }
         }
-        else // bunker or default state
+        else
         {
             timer = 0f;
             isCountingUp = false;
@@ -315,7 +314,7 @@ public class ExitBunkerManager : MonoBehaviour
         if (explorationManager != null)
             explorationManager.StopExploring();
 
-        timer = Mathf.Max(timer, 10f);  // Avoid instant return
+        timer = Mathf.Max(timer, 10f);
 
         DateTime now = DateTime.UtcNow;
         PlayerPrefs.SetString(RETURN_TIME_KEY, now.ToBinary().ToString());
@@ -333,17 +332,15 @@ public class ExitBunkerManager : MonoBehaviour
         if (!isCountingDown)
         {
             Debug.Log("SubtractOneHour ignored: Not currently returning.");
-            return; // Only subtract while returning
+            return;
         }
 
-        timer -= 3600f; // subtract 1 hour in seconds
+        timer -= 3600f;
         if (timer < 0f)
             timer = 0f;
 
         Debug.Log($"Return timer reduced by 1 hour. New timer: {timer}");
 
-        // Update PlayerPrefs return start time to keep consistency with timer
-        // Recalculate new return start time = now - (returnDuration - timer)
         float returnDuration = PlayerPrefs.GetFloat(RETURN_DURATION_KEY, timer);
         DateTime now = DateTime.UtcNow;
         DateTime newReturnStart = now.AddSeconds(-(returnDuration - timer));

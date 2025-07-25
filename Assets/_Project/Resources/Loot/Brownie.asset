@@ -23,6 +23,6 @@ MonoBehaviour:
   maxDurability: 0
   isDurable: 0
   rarity: 0
-  dropChance: 0.299
+  dropChance: 0.912
   minQuantity: 1
   maxQuantity: 1

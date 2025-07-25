@@ -3,22 +3,50 @@ using UnityEngine;
 
 public static class ItemDatabase
 {
-    private static Dictionary<string, InventoryItemData> itemDict;
+    private static Dictionary<string, InventoryItemData> itemLookup = new Dictionary<string, InventoryItemData>();
 
-    public static void Initialize(List<InventoryItemData> allItems)
+    public static void Initialize(List<InventoryItemData> predefinedItems = null)
     {
-        itemDict = new Dictionary<string, InventoryItemData>();
+        itemLookup.Clear();
+
+        // Load all InventoryItemData from Resources/Loot/
+        InventoryItemData[] allItems = Resources.LoadAll<InventoryItemData>("Loot");
+
         foreach (var item in allItems)
         {
-            if (!itemDict.ContainsKey(item.itemID))
-                itemDict.Add(item.itemID, item);
+            if (!itemLookup.ContainsKey(item.itemID))
+            {
+                itemLookup.Add(item.itemID, item);
+            }
+            else
+            {
+                Debug.LogWarning("Duplicate item ID found in Resources: " + item.itemID);
+            }
         }
+
+        // Also add predefined ones if any (from InventoryManager)
+        if (predefinedItems != null)
+        {
+            foreach (var item in predefinedItems)
+            {
+                if (!itemLookup.ContainsKey(item.itemID))
+                {
+                    itemLookup.Add(item.itemID, item);
+                }
+            }
+        }
+
+        Debug.Log("ItemDatabase initialized with " + itemLookup.Count + " items.");
     }
 
     public static InventoryItemData FindItemByID(string id)
     {
-        if (itemDict != null && itemDict.TryGetValue(id, out var item))
+        InventoryItemData item;
+        if (itemLookup.TryGetValue(id, out item))
+        {
             return item;
+        }
+
         return null;
     }
 }

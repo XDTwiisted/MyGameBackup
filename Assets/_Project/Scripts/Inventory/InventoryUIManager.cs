@@ -25,6 +25,7 @@ public class InventoryUIManager : MonoBehaviour
     public Button healthTabButton;
 
     private string currentCategory = "All";
+    private const string LastCategoryKey = "LastInventoryCategory";
 
     private void Awake()
     {
@@ -34,13 +35,19 @@ public class InventoryUIManager : MonoBehaviour
 
     private void Start()
     {
-        weaponsTabButton.onClick.AddListener(() => ShowCategory("Weapon"));
-        toolsTabButton.onClick.AddListener(() => ShowCategory("Tool"));
-        foodTabButton.onClick.AddListener(() => ShowCategory("Food"));
-        miscTabButton.onClick.AddListener(() => ShowCategory("Misc"));
-        healthTabButton.onClick.AddListener(() => ShowCategory("Health"));
+        weaponsTabButton.onClick.AddListener(() => OnTabClicked("Weapon"));
+        toolsTabButton.onClick.AddListener(() => OnTabClicked("Tool"));
+        foodTabButton.onClick.AddListener(() => OnTabClicked("Food"));
+        miscTabButton.onClick.AddListener(() => OnTabClicked("Misc"));
+        healthTabButton.onClick.AddListener(() => OnTabClicked("Health"));
 
         inventoryPanel.SetActive(false);
+
+        // Restore last category if saved
+        if (PlayerPrefs.HasKey(LastCategoryKey))
+        {
+            currentCategory = PlayerPrefs.GetString(LastCategoryKey);
+        }
     }
 
     public void ToggleInventory()
@@ -54,11 +61,19 @@ public class InventoryUIManager : MonoBehaviour
         }
     }
 
+    public void OnTabClicked(string category)
+    {
+        PlayerPrefs.SetString(LastCategoryKey, category);
+        PlayerPrefs.Save();
+        ShowCategory(category);
+    }
+
     public void ShowCategory(string category)
     {
         currentCategory = category;
         InventoryManager.Instance.SetCategory(category);
         RefreshInventoryDisplay();
+        HighlightActiveTab(category);
     }
 
     public void RefreshInventoryDisplay()
@@ -74,7 +89,7 @@ public class InventoryUIManager : MonoBehaviour
             GameObject prefab = GetSlotPrefabForCategory(entry.itemData.category);
             if (prefab == null) continue;
 
-            GameObject slotGO = Instantiate(prefab, itemListParent);
+            GameObject slotGO = GameObject.Instantiate(prefab, itemListParent);
             InventoryItemUI itemUI = slotGO.GetComponent<InventoryItemUI>();
             if (itemUI != null)
             {
@@ -94,5 +109,15 @@ public class InventoryUIManager : MonoBehaviour
             case "Misc": return miscSlotPrefab;
             default: return null;
         }
+    }
+
+    private void HighlightActiveTab(string category)
+    {
+        // Optional: visually highlight active button (could use color or interactable toggle)
+        weaponsTabButton.interactable = category != "Weapon";
+        toolsTabButton.interactable = category != "Tool";
+        foodTabButton.interactable = category != "Food";
+        miscTabButton.interactable = category != "Misc";
+        healthTabButton.interactable = category != "Health";
     }
 }
