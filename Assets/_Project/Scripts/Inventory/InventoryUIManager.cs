@@ -1,5 +1,6 @@
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
 
 public class InventoryUIManager : MonoBehaviour
 {
@@ -10,147 +11,88 @@ public class InventoryUIManager : MonoBehaviour
     public Transform itemListParent;
 
     [Header("Slot Prefabs")]
-    public GameObject weaponSlotPrefab;
-    public GameObject toolSlotPrefab;
+    public GameObject foodSlotPrefab;
     public GameObject healthSlotPrefab;
+    public GameObject toolSlotPrefab;
+    public GameObject weaponSlotPrefab;
     public GameObject miscSlotPrefab;
-    public GameObject foodThirstSlotPrefab; // Shared prefab for Food and Thirst items
 
-    private bool isVisible = false;
-    private string currentCategoryFilter = "Food";
+    [Header("Tab Buttons")]
+    public Button weaponsTabButton;
+    public Button toolsTabButton;
+    public Button foodTabButton;
+    public Button miscTabButton;
+    public Button healthTabButton;
+
+    private string currentCategory = "All";
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
+    }
+
+    private void Start()
+    {
+        weaponsTabButton.onClick.AddListener(() => ShowCategory("Weapon"));
+        toolsTabButton.onClick.AddListener(() => ShowCategory("Tool"));
+        foodTabButton.onClick.AddListener(() => ShowCategory("Food"));
+        miscTabButton.onClick.AddListener(() => ShowCategory("Misc"));
+        healthTabButton.onClick.AddListener(() => ShowCategory("Health"));
+
+        inventoryPanel.SetActive(false);
     }
 
     public void ToggleInventory()
     {
-        isVisible = !isVisible;
+        bool isVisible = inventoryPanel.activeSelf;
+        inventoryPanel.SetActive(!isVisible);
 
-        if (inventoryPanel == null)
+        if (!isVisible)
         {
-            Debug.LogError("InventoryUIManager: inventoryPanel is not assigned!");
-            return;
+            ShowCategory(currentCategory);
         }
-
-        inventoryPanel.SetActive(isVisible);
-
-        if (!isVisible) return;
-
-        if (InventoryManager.Instance != null)
-        {
-            currentCategoryFilter = InventoryManager.Instance.CurrentCategory;
-            InventoryManager.Instance.SetCategory(currentCategoryFilter);
-        }
-        else
-        {
-            Debug.LogError("InventoryUIManager: InventoryManager.Instance is null!");
-        }
-
-        if (InventoryCategoryGroup.Instance != null)
-        {
-            InventoryCategoryGroup.Instance.SetActiveCategory(currentCategoryFilter);
-        }
-
-        RefreshInventoryDisplay();
     }
 
     public void ShowCategory(string category)
     {
-        currentCategoryFilter = category;
-
-        if (InventoryManager.Instance != null)
-        {
-            InventoryManager.Instance.SetCategory(category);
-        }
-
-        if (InventoryCategoryGroup.Instance != null)
-        {
-            InventoryCategoryGroup.Instance.SetActiveCategory(category);
-        }
-
+        currentCategory = category;
+        InventoryManager.Instance.SetCategory(category);
         RefreshInventoryDisplay();
     }
 
     public void RefreshInventoryDisplay()
     {
-        if (itemListParent == null)
-        {
-            Debug.LogError("InventoryUIManager: itemListParent is not assigned!");
-            return;
-        }
-
         foreach (Transform child in itemListParent)
         {
             Destroy(child.gameObject);
         }
 
-        if (InventoryManager.Instance == null)
+        List<InventoryEntry> items = InventoryManager.Instance.GetInventory(currentCategory);
+        foreach (var entry in items)
         {
-            Debug.LogError("InventoryUIManager: InventoryManager.Instance is null during refresh.");
-            return;
-        }
+            GameObject prefab = GetSlotPrefabForCategory(entry.itemData.category);
+            if (prefab == null) continue;
 
-        var inventory = InventoryManager.Instance.GetInventory();
-
-        foreach (var pair in inventory)
-        {
-            InventoryItemData item = pair.Key;
-            int quantity = pair.Value;
-
-            if (item == null)
-            {
-                Debug.LogWarning("InventoryUIManager: Skipping null item in inventory.");
-                continue;
-            }
-
-            if (item.category != currentCategoryFilter)
-                continue;
-
-            GameObject prefabToUse = GetSlotPrefabByCategory(item.category);
-
-            if (prefabToUse == null)
-            {
-                Debug.LogError($"InventoryUIManager: No prefab found for category '{item.category}'");
-                continue;
-            }
-
-            GameObject newItem = Instantiate(prefabToUse, itemListParent);
-            InventoryItemUI itemUI = newItem.GetComponent<InventoryItemUI>();
-
+            GameObject slotGO = Instantiate(prefab, itemListParent);
+            InventoryItemUI itemUI = slotGO.GetComponent<InventoryItemUI>();
             if (itemUI != null)
             {
-                itemUI.Setup(item, quantity);
-            }
-            else
-            {
-                Debug.LogError("InventoryUIManager: Instantiated prefab is missing InventoryItemUI component.");
+                itemUI.Setup(entry.itemData, entry.quantity);
             }
         }
     }
 
-    private GameObject GetSlotPrefabByCategory(string category)
+    private GameObject GetSlotPrefabForCategory(string category)
     {
         switch (category)
         {
-            case "Weapon": return weaponSlotPrefab;
-            case "Tool": return toolSlotPrefab;
+            case "Food": return foodSlotPrefab;
             case "Health": return healthSlotPrefab;
+            case "Tool": return toolSlotPrefab;
+            case "Weapon": return weaponSlotPrefab;
             case "Misc": return miscSlotPrefab;
-            case "Food":
-            case "Thirst":
-                return foodThirstSlotPrefab;
-            default:
-                Debug.LogWarning($"InventoryUIManager: Unknown category '{category}'");
-                return null;
+            default: return null;
         }
     }
 }

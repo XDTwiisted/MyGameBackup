@@ -1147,11 +1147,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   inventoryPanel: {fileID: 2020816795}
   itemListParent: {fileID: 264743695}
-  weaponSlotPrefab: {fileID: 435736950036133621, guid: 3c6777c51866884478a9d4849b391054, type: 3}
-  toolSlotPrefab: {fileID: 435736950036133621, guid: eb76b0040e4eb5d449c01c11fe71ba85, type: 3}
+  foodSlotPrefab: {fileID: 435736950036133621, guid: 004aaf3b1190a224f932310c60701bcc, type: 3}
   healthSlotPrefab: {fileID: 435736950036133621, guid: 032bdb63870b03d42a3f91381694daf6, type: 3}
+  toolSlotPrefab: {fileID: 435736950036133621, guid: eb76b0040e4eb5d449c01c11fe71ba85, type: 3}
+  weaponSlotPrefab: {fileID: 435736950036133621, guid: 3c6777c51866884478a9d4849b391054, type: 3}
   miscSlotPrefab: {fileID: 435736950036133621, guid: 3675a5cee84536246b00b1c9a2b4b5ad, type: 3}
-  foodThirstSlotPrefab: {fileID: 435736950036133621, guid: 004aaf3b1190a224f932310c60701bcc, type: 3}
+  weaponsTabButton: {fileID: 1449510514}
+  toolsTabButton: {fileID: 818520939}
+  foodTabButton: {fileID: 1764490775}
+  miscTabButton: {fileID: 235024239}
+  healthTabButton: {fileID: 2027848356}
 --- !u!4 &302684580
 Transform:
   m_ObjectHideFlags: 0
@@ -2348,14 +2353,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bdcf7159df832644f93913247283dfa3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  itemSlotPrefab: {fileID: 435736950036133621, guid: 004aaf3b1190a224f932310c60701bcc, type: 3}
-  contentParent: {fileID: 264743695}
+  foodSlotPrefab: {fileID: 435736950036133621, guid: 004aaf3b1190a224f932310c60701bcc, type: 3}
+  healthSlotPrefab: {fileID: 435736950036133621, guid: 032bdb63870b03d42a3f91381694daf6, type: 3}
+  toolSlotPrefab: {fileID: 435736950036133621, guid: eb76b0040e4eb5d449c01c11fe71ba85, type: 3}
+  weaponSlotPrefab: {fileID: 435736950036133621, guid: 3c6777c51866884478a9d4849b391054, type: 3}
+  miscSlotPrefab: {fileID: 435736950036133621, guid: 3675a5cee84536246b00b1c9a2b4b5ad, type: 3}
   foodHeaderPrefab: {fileID: 533943565557365783, guid: c949fc8633b151043b784c132d4e1fc1, type: 3}
   healthHeaderPrefab: {fileID: 533943565557365783, guid: c949fc8633b151043b784c132d4e1fc1, type: 3}
   thirstHeaderPrefab: {fileID: 0}
   miscHeaderPrefab: {fileID: 0}
   toolsHeaderPrefab: {fileID: 0}
   weaponsHeaderPrefab: {fileID: 0}
+  contentParent: {fileID: 264743695}
+  allItems: []
   inventory:
   - itemData: {fileID: 0}
     quantity: 0
@@ -6202,7 +6212,7 @@ MonoBehaviour:
   maxStamina: 100
   staminaDrainRate: 20
   staminaRegenRate: 10
-  speedMultiplier: 20
+  speedMultiplier: 30
 --- !u!4 &1962700684
 Transform:
   m_ObjectHideFlags: 0
