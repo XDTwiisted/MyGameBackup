@@ -1834,60 +1834,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 547433864}
   m_CullTransparentMesh: 1
---- !u!1 &593120747
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 593120749}
-  - component: {fileID: 593120748}
-  m_Layer: 0
-  m_Name: LootTableManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &593120748
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 593120747}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 08a54bfa77171104ea7cd89ff99c8768, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  rarityChances:
-  - rarity: 0
-    chance: 92.1
-  - rarity: 1
-    chance: 6.5
-  - rarity: 2
-    chance: 6.5
-  - rarity: 3
-    chance: 1
-  lootDropInterval: 15
---- !u!4 &593120749
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 593120747}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 398.72162, y: 897.70215, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &603877917
 GameObject:
   m_ObjectHideFlags: 0
@@ -2365,7 +2311,6 @@ MonoBehaviour:
   toolsHeaderPrefab: {fileID: 0}
   weaponsHeaderPrefab: {fileID: 0}
   contentParent: {fileID: 264743695}
-  allItems: []
   inventory:
   - itemData: {fileID: 0}
     quantity: 0
@@ -6066,7 +6011,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6b91dfa4baa00304b95c68ebb68d149e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lootTable: {fileID: 593120748}
+  lootTable: {fileID: 1968170883}
   lootTickInterval: 10
   explorationDialogueManager: {fileID: 603877918}
 --- !u!4 &1898766166
@@ -6208,7 +6153,7 @@ MonoBehaviour:
   character: {fileID: 1924032060}
   explorationDialogue: {fileID: 603877918}
   explorationManager: {fileID: 1898766165}
-  lootTable: {fileID: 593120748}
+  lootTable: {fileID: 1968170883}
   maxStamina: 100
   staminaDrainRate: 20
   staminaRegenRate: 10
@@ -6237,27 +6182,14 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1968170882}
-  - component: {fileID: 1968170881}
+  - component: {fileID: 1968170883}
   m_Layer: 0
-  m_Name: LootTest
+  m_Name: LootTable
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1968170881
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1968170880}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 94f679617abd4ae41a70f7b6db70085e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  lootTable: {fileID: 593120748}
 --- !u!4 &1968170882
 Transform:
   m_ObjectHideFlags: 0
@@ -6273,6 +6205,27 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1968170883
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1968170880}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 08a54bfa77171104ea7cd89ff99c8768, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rarityChances:
+  - rarity: 0
+    dropChance: 70
+  - rarity: 1
+    dropChance: 15
+  - rarity: 2
+    dropChance: 10
+  - rarity: 3
+    dropChance: 5
 --- !u!1 &2020816795
 GameObject:
   m_ObjectHideFlags: 0
@@ -6883,7 +6836,6 @@ SceneRoots:
   - {fileID: 1962700684}
   - {fileID: 420977137}
   - {fileID: 603877919}
-  - {fileID: 593120749}
   - {fileID: 1968170882}
   - {fileID: 1898766166}
   - {fileID: 183097327}

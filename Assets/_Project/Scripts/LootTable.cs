@@ -4,21 +4,23 @@ using UnityEngine;
 public class LootTable : MonoBehaviour
 {
     [System.Serializable]
-    public class RarityChance
+    public class RarityDropChance
     {
         public ItemRarity rarity;
-        [Range(0f, 100f)] public float chance;
+        [Range(0f, 100f)] public float dropChance;
     }
 
-    [Tooltip("Loot rarity distribution. Should total 100%")]
-    public List<RarityChance> rarityChances;
+    [Header("Rarity Drop Chances (Should total 100%)")]
+    public List<RarityDropChance> rarityChances = new List<RarityDropChance>
+    {
+        new RarityDropChance { rarity = ItemRarity.Common, dropChance = 70f },
+        new RarityDropChance { rarity = ItemRarity.Uncommon, dropChance = 15f },
+        new RarityDropChance { rarity = ItemRarity.Rare, dropChance = 10f },
+        new RarityDropChance { rarity = ItemRarity.Epic, dropChance = 4f },
+        new RarityDropChance { rarity = ItemRarity.Legendary, dropChance = 1f }
+    };
 
-    private List<LootItem> possibleLoot = new List<LootItem>();
-    private List<string> newlyFoundItems = new List<string>();
-
-    // Timer to control when to attempt a loot drop
-    public float lootDropInterval = 15f; // base interval in seconds
-    private float lootDropTimer = 0f;
+    private Dictionary<ItemRarity, List<LootItem>> lootByRarity = new Dictionary<ItemRarity, List<LootItem>>();
 
     private void Awake()
     {
@@ -27,98 +29,52 @@ public class LootTable : MonoBehaviour
 
     private void LoadLootFromResources()
     {
-        possibleLoot.Clear();
+        lootByRarity.Clear();
 
-        InventoryItemData[] allItems = Resources.LoadAll<InventoryItemData>("Loot");
+        InventoryItemData[] allLoot = Resources.LoadAll<InventoryItemData>("Loot");
 
-        foreach (var item in allItems)
+        foreach (var item in allLoot)
         {
-            if (item != null)
+            if (item == null) continue;
+
+            if (!lootByRarity.ContainsKey(item.rarity))
             {
-                possibleLoot.Add(new LootItem(item, item.minQuantity, item.maxQuantity, item.dropChance));
+                lootByRarity[item.rarity] = new List<LootItem>();
             }
+
+            lootByRarity[item.rarity].Add(new LootItem(item, item.minQuantity, item.maxQuantity, item.dropChance));
         }
 
-        Debug.Log($"[LootTable] Loaded {possibleLoot.Count} loot items from Resources/Loot/");
-    }
-
-    // Call this in Update with scaled deltaTime to speed up loot drops
-    public void UpdateLoot(float deltaTime)
-    {
-        lootDropTimer += deltaTime;
-
-        if (lootDropTimer >= lootDropInterval)
-        {
-            lootDropTimer = 0f;
-            List<LootItem> dropped = GetLoot();
-            // Optionally handle the dropped loot here or notify other systems
-        }
+        Debug.Log($"[LootTable] Loaded {allLoot.Length} items from Resources/Loot.");
     }
 
     public List<LootItem> GetLoot()
     {
-        List<LootItem> droppedLoot = new List<LootItem>();
+        List<LootItem> drops = new List<LootItem>();
 
-        int numberOfRolls = 1;
+        ItemRarity selectedRarity = RollForRarity();
 
-        for (int i = 0; i < numberOfRolls; i++)
+        if (lootByRarity.TryGetValue(selectedRarity, out var items) && items.Count > 0)
         {
-            ItemRarity selectedRarity = RollRarity();
-
-            List<LootItem> filteredLoot = possibleLoot.FindAll(loot =>
-                loot.itemData != null && loot.itemData.rarity == selectedRarity);
-
-            if (filteredLoot.Count == 0)
-            {
-                Debug.LogWarning($"No loot items found for rarity: {selectedRarity}");
-                continue;
-            }
-
-            LootItem chosenLoot = filteredLoot[Random.Range(0, filteredLoot.Count)];
-            float roll = Random.value;
-
-            float dropChance = chosenLoot.itemData.dropChance;
-
-            Debug.Log($"Roll #{i + 1}: Rarity={selectedRarity}, Item={chosenLoot.itemData.itemName}, DropChance={dropChance}, Roll={roll}");
-
-            if (roll <= dropChance)
-            {
-                int quantity = Random.Range(chosenLoot.itemData.minQuantity, chosenLoot.itemData.maxQuantity + 1);
-                droppedLoot.Add(new LootItem(chosenLoot.itemData, quantity, quantity, 1f));
-                newlyFoundItems.Add(chosenLoot.itemData.itemName);
-
-                Debug.Log($"Dropped: {chosenLoot.itemData.itemName} x{quantity}");
-            }
+            LootItem item = items[Random.Range(0, items.Count)];
+            drops.Add(item);
         }
 
-        if (droppedLoot.Count == 0)
-        {
-            Debug.Log("No loot dropped this roll.");
-        }
-
-        return droppedLoot;
+        return drops;
     }
 
-    private ItemRarity RollRarity()
+    private ItemRarity RollForRarity()
     {
         float roll = Random.Range(0f, 100f);
         float cumulative = 0f;
 
-        foreach (var rc in rarityChances)
+        foreach (var rarity in rarityChances)
         {
-            cumulative += rc.chance;
+            cumulative += rarity.dropChance;
             if (roll <= cumulative)
-                return rc.rarity;
+                return rarity.rarity;
         }
 
-        Debug.LogWarning("Rarity roll failed, defaulting to Common");
-        return ItemRarity.Common;
-    }
-
-    public List<string> GetNewlyFoundItems()
-    {
-        List<string> items = new List<string>(newlyFoundItems);
-        newlyFoundItems.Clear();
-        return items;
+        return ItemRarity.Common; // fallback
     }
 }
