@@ -147,6 +147,7 @@ MonoBehaviour:
   quantityText: {fileID: 5633281324370697555}
   durabilityText: {fileID: 0}
   useButton: {fileID: 5138770359864225004}
+  rarityBackground: {fileID: 0}
 --- !u!1 &1446634344140263057
 GameObject:
   m_ObjectHideFlags: 0

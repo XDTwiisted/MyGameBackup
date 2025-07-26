@@ -5426,9 +5426,9 @@ MonoBehaviour:
   health: 100
   hunger: 100
   thirst: 100
-  healthDecayRate: 0.01
-  hungerDecayRate: 0.01
-  thirstDecayRate: 0.01
+  healthDecayRate: 0.001
+  hungerDecayRate: 0.001
+  thirstDecayRate: 0.001
 --- !u!4 &1699302214
 Transform:
   m_ObjectHideFlags: 0
@@ -6263,7 +6263,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 1014.2095, y: 1331.2183}
+  m_SizeDelta: {x: 1015, y: 1300}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2020816797
 MonoBehaviour:
