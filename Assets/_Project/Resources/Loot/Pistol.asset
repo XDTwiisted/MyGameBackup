@@ -16,13 +16,13 @@ MonoBehaviour:
   itemName: Pistol
   icon: {fileID: 21300000, guid: 1616e4908b7c0284997f328329c92b1b, type: 3}
   category: Weapon
-  description: better than nothing
+  description: 5 Damage
   restoreHunger: 0
   restoreThirst: 0
   restoreHealth: 0
   maxDurability: 100
   isDurable: 1
-  rarity: 2
+  rarity: 3
   dropChance: 1
   minQuantity: 1
   maxQuantity: 1
