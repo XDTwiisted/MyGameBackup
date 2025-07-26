@@ -116,8 +116,6 @@ MonoBehaviour:
   effectText: {fileID: 4294055660211136639}
   quantityText: {fileID: 5633281324370697555}
   durabilityText: {fileID: 0}
-  damageText: {fileID: 0}
-  ammoTypeText: {fileID: 1386825004377858230}
   useButton: {fileID: 0}
   fillImage: {fileID: 4523645757383115663}
   backgroundImage: {fileID: 7880954302146880912}
