@@ -6,36 +6,36 @@ using System;
 using Button = UnityEngine.UI.Button;
 using Image = UnityEngine.UI.Image;
 
-public class GearUpWeaponSelector : MonoBehaviour
+public class GearUpToolSelector : MonoBehaviour
 {
     [Header("UI References")]
-    public Button weaponSlotButton;
-    public Button backButton; // NEW: Go Back button reference
+    public Button toolSlotButton;
+    public Button backButton;
     public GameObject itemSelectionPanel;
     public TextMeshProUGUI selectionTitle;
     public Transform itemScrollViewContent;
-    public GameObject weaponSlotPrefab;
+    public GameObject toolSlotPrefab;
 
     private void Start()
     {
-        weaponSlotButton.onClick.AddListener(OpenWeaponSelection);
+        toolSlotButton.onClick.AddListener(OpenToolSelection);
 
         if (backButton != null)
-            backButton.onClick.AddListener(CloseWeaponSelection); // NEW
+            backButton.onClick.AddListener(CloseToolSelection);
 
         if (itemSelectionPanel != null)
             itemSelectionPanel.SetActive(false);
     }
 
-    void OpenWeaponSelection()
+    void OpenToolSelection()
     {
-        Debug.Log("Opening weapon selection...");
+        Debug.Log("Opening tool selection...");
 
         if (itemSelectionPanel != null)
             itemSelectionPanel.SetActive(true);
 
         if (selectionTitle != null)
-            selectionTitle.text = "Select a Weapon";
+            selectionTitle.text = "Select a Tool";
 
         foreach (Transform child in itemScrollViewContent)
         {
@@ -43,7 +43,6 @@ public class GearUpWeaponSelector : MonoBehaviour
         }
 
         List<InventoryEntry> inventory = InventoryManager.Instance.inventory;
-
         Debug.Log("Inventory Count: " + inventory.Count);
 
         foreach (InventoryEntry entry in inventory)
@@ -56,12 +55,12 @@ public class GearUpWeaponSelector : MonoBehaviour
 
             Debug.Log($"Checking item: {entry.itemData.itemName}, Category: {entry.itemData.category}, Quantity: {entry.quantity}");
 
-            if (entry.itemData.category.Equals("Weapon", StringComparison.OrdinalIgnoreCase) && entry.quantity > 0)
+            if (entry.itemData.category.Equals("Tool", StringComparison.OrdinalIgnoreCase) && entry.quantity > 0)
             {
                 Debug.Log("Adding to selector: " + entry.itemData.itemName);
 
-                GameObject slotGO = Instantiate(weaponSlotPrefab, itemScrollViewContent);
-                slotGO.name = "WeaponSlot_" + entry.itemData.itemName + "_" + Guid.NewGuid().ToString("N");
+                GameObject slotGO = Instantiate(toolSlotPrefab, itemScrollViewContent);
+                slotGO.name = "ToolSlot_" + entry.itemData.itemName + "_" + Guid.NewGuid().ToString("N");
 
                 RectTransform rt = slotGO.GetComponent<RectTransform>();
                 if (rt != null)
@@ -120,7 +119,7 @@ public class GearUpWeaponSelector : MonoBehaviour
                 if (button != null)
                 {
                     InventoryItemData capturedItem = entry.itemData;
-                    button.onClick.AddListener(() => AssignWeapon(capturedItem));
+                    button.onClick.AddListener(() => AssignTool(capturedItem));
                 }
             }
         }
@@ -128,20 +127,22 @@ public class GearUpWeaponSelector : MonoBehaviour
         LayoutRebuilder.ForceRebuildLayoutImmediate(itemScrollViewContent.GetComponent<RectTransform>());
     }
 
-    void AssignWeapon(InventoryItemData selectedItem)
+    void AssignTool(InventoryItemData selectedItem)
     {
-        Debug.Log("Selected weapon: " + selectedItem.itemName);
+        Debug.Log("Selected tool: " + selectedItem.itemName);
 
-        if (weaponSlotButton != null)
+        if (toolSlotButton != null)
         {
-            Image buttonImage = weaponSlotButton.GetComponent<Image>();
+            // Set background color for rarity on main button
+            Image buttonImage = toolSlotButton.GetComponent<Image>();
             if (buttonImage != null)
             {
                 buttonImage.sprite = null;
                 buttonImage.color = GetRarityColor(selectedItem.rarity);
             }
 
-            Transform iconTransform = weaponSlotButton.transform.Find("WeaponSlotButtonBackground");
+            // Set sprite on ToolSlotButtonBackground child
+            Transform iconTransform = toolSlotButton.transform.Find("ToolSlotButtonBackground");
             if (iconTransform != null)
             {
                 Image iconImage = iconTransform.GetComponent<Image>();
@@ -154,15 +155,15 @@ public class GearUpWeaponSelector : MonoBehaviour
             }
         }
 
-        CloseWeaponSelection();
+        CloseToolSelection();
     }
 
-    void CloseWeaponSelection()
+    void CloseToolSelection()
     {
         if (itemSelectionPanel != null)
         {
             itemSelectionPanel.SetActive(false);
-            Debug.Log("Closed weapon selection.");
+            Debug.Log("Closed tool selection.");
         }
     }
 
