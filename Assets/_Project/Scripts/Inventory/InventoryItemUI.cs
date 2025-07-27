@@ -9,21 +9,24 @@ public class InventoryItemUI : MonoBehaviour
     public TextMeshProUGUI nameText;
     public TextMeshProUGUI effectText;
     public TextMeshProUGUI quantityText;
-    public TextMeshProUGUI durabilityText; // Only shown if item.isDurable
+    public TextMeshProUGUI durabilityText;
     public Button useButton;
 
     [Header("Durability Visuals")]
-    public Image fillImage;                     // Fill Area > Fill
-    [SerializeField] private Image backgroundImage;   // Slider > Background (now visible in Inspector)
+    public Slider durabilitySlider; // NEW: required for value updates
+    public Image fillImage;
+    [SerializeField] private Image backgroundImage;
 
     private InventoryItemData currentItem;
     private int currentQuantity;
+    private int currentDurability;
     private InventoryUseHandler useHandler;
 
-    public void Setup(InventoryItemData item, int quantity)
+    public void Setup(InventoryItemData item, int quantity, int durability = -1)
     {
         currentItem = item;
         currentQuantity = quantity;
+        currentDurability = durability;
 
         if (iconImage != null)
             iconImage.sprite = item.icon;
@@ -37,13 +40,12 @@ public class InventoryItemUI : MonoBehaviour
         if (quantityText != null)
             quantityText.text = quantity.ToString();
 
-        // Handle durability
         if (durabilityText != null)
         {
             if (item.isDurable)
             {
                 durabilityText.gameObject.SetActive(true);
-                durabilityText.text = $"Durability: {item.maxDurability}";
+                durabilityText.text = $"Durability: {currentDurability}/{item.maxDurability}";
             }
             else
             {
@@ -51,7 +53,17 @@ public class InventoryItemUI : MonoBehaviour
             }
         }
 
-        // Apply rarity color to fill and darker version to background
+        if (item.isDurable && durabilitySlider != null)
+        {
+            durabilitySlider.gameObject.SetActive(true);
+            durabilitySlider.maxValue = item.maxDurability;
+            durabilitySlider.value = currentDurability;
+        }
+        else if (durabilitySlider != null)
+        {
+            durabilitySlider.gameObject.SetActive(false);
+        }
+
         if (fillImage != null && backgroundImage != null)
         {
             Color rarityColor = GetRarityColor(item.rarity);
@@ -59,8 +71,7 @@ public class InventoryItemUI : MonoBehaviour
             backgroundImage.color = DarkenColor(rarityColor, 0.5f);
         }
 
-        // Setup Use Button
-        useHandler = Object.FindFirstObjectByType<InventoryUseHandler>();
+        useHandler = UnityEngine.Object.FindFirstObjectByType<InventoryUseHandler>();
 
         if (useButton != null)
         {
@@ -97,32 +108,21 @@ public class InventoryItemUI : MonoBehaviour
             quantityText.text = newQuantity.ToString();
     }
 
-    /// <summary>
-    /// Returns the color that matches the item's rarity.
-    /// </summary>
     private Color GetRarityColor(ItemRarity rarity)
     {
         switch (rarity)
         {
-            case ItemRarity.Common: return new Color(0.8f, 0.8f, 0.8f);       // Light Gray
-            case ItemRarity.Uncommon: return new Color(0.2f, 0.8f, 0.2f);    // Green
-            case ItemRarity.Rare: return new Color(0.2f, 0.4f, 0.8f);        // Blue
-            case ItemRarity.Epic: return new Color(0.6f, 0.2f, 0.8f);        // Purple
-            case ItemRarity.Legendary: return new Color(0.9f, 0.6f, 0.1f);   // Gold/Orange
+            case ItemRarity.Common: return new Color(0.8f, 0.8f, 0.8f);
+            case ItemRarity.Uncommon: return new Color(0.2f, 0.8f, 0.2f);
+            case ItemRarity.Rare: return new Color(0.2f, 0.4f, 0.8f);
+            case ItemRarity.Epic: return new Color(0.6f, 0.2f, 0.8f);
+            case ItemRarity.Legendary: return new Color(0.9f, 0.6f, 0.1f);
             default: return Color.white;
         }
     }
 
-    /// <summary>
-    /// Returns a darker version of the given color.
-    /// </summary>
     private Color DarkenColor(Color color, float amount = 0.5f)
     {
-        return new Color(
-            color.r * amount,
-            color.g * amount,
-            color.b * amount,
-            color.a
-        );
+        return new Color(color.r * amount, color.g * amount, color.b * amount, color.a);
     }
 }

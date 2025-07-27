@@ -1,6 +1,6 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 public class InventoryUIManager : MonoBehaviour
 {
@@ -43,7 +43,6 @@ public class InventoryUIManager : MonoBehaviour
 
         inventoryPanel.SetActive(false);
 
-        // Restore last category if saved
         if (PlayerPrefs.HasKey(LastCategoryKey))
         {
             currentCategory = PlayerPrefs.GetString(LastCategoryKey);
@@ -83,17 +82,35 @@ public class InventoryUIManager : MonoBehaviour
             Destroy(child.gameObject);
         }
 
-        List<InventoryEntry> items = InventoryManager.Instance.GetInventory(currentCategory);
-        foreach (var entry in items)
+        string category = currentCategory;
+
+        // Handle durable items (e.g., weapons/tools)
+        List<ItemInstance> durableItems = InventoryManager.Instance.GetRuntimeInventory(category);
+        foreach (var item in durableItems)
+        {
+            GameObject prefab = GetSlotPrefabForCategory(item.itemData.category);
+            if (prefab == null) continue;
+
+            GameObject slotGO = Instantiate(prefab, itemListParent);
+            InventoryItemUI itemUI = slotGO.GetComponent<InventoryItemUI>();
+            if (itemUI != null)
+            {
+                itemUI.Setup(item.itemData, item.quantity, item.currentDurability);
+            }
+        }
+
+        // Handle non-durable stackables (e.g., food/health)
+        List<InventoryEntry> stackableItems = InventoryManager.Instance.GetInventory(category);
+        foreach (var entry in stackableItems)
         {
             GameObject prefab = GetSlotPrefabForCategory(entry.itemData.category);
             if (prefab == null) continue;
 
-            GameObject slotGO = GameObject.Instantiate(prefab, itemListParent);
+            GameObject slotGO = Instantiate(prefab, itemListParent);
             InventoryItemUI itemUI = slotGO.GetComponent<InventoryItemUI>();
             if (itemUI != null)
             {
-                itemUI.Setup(entry.itemData, entry.quantity);
+                itemUI.Setup(entry.itemData, entry.quantity, -1);
             }
         }
     }
@@ -113,13 +130,10 @@ public class InventoryUIManager : MonoBehaviour
 
     private void HighlightActiveTab(string category)
     {
-        // Optional: visually highlight active button (could use color or interactable toggle)
         weaponsTabButton.interactable = category != "Weapon";
         toolsTabButton.interactable = category != "Tool";
         foodTabButton.interactable = category != "Food";
         miscTabButton.interactable = category != "Misc";
         healthTabButton.interactable = category != "Health";
     }
-
-
 }

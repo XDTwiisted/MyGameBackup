@@ -3,14 +3,12 @@ using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
 using System;
-using Button = UnityEngine.UI.Button;
-using Image = UnityEngine.UI.Image;
 
 public class GearUpWeaponSelector : MonoBehaviour
 {
     [Header("UI References")]
     public Button weaponSlotButton;
-    public Button backButton; // NEW: Go Back button reference
+    public Button backButton;
     public GameObject itemSelectionPanel;
     public TextMeshProUGUI selectionTitle;
     public Transform itemScrollViewContent;
@@ -21,7 +19,7 @@ public class GearUpWeaponSelector : MonoBehaviour
         weaponSlotButton.onClick.AddListener(OpenWeaponSelection);
 
         if (backButton != null)
-            backButton.onClick.AddListener(CloseWeaponSelection); // NEW
+            backButton.onClick.AddListener(CloseWeaponSelection);
 
         if (itemSelectionPanel != null)
             itemSelectionPanel.SetActive(false);
@@ -38,94 +36,57 @@ public class GearUpWeaponSelector : MonoBehaviour
             selectionTitle.text = "Select a Weapon";
 
         foreach (Transform child in itemScrollViewContent)
-        {
             Destroy(child.gameObject);
+
+        // 1. Stackable weapons
+        foreach (InventoryEntry entry in InventoryManager.Instance.inventory)
+        {
+            if (entry.itemData != null &&
+                entry.itemData.category.Equals("Weapon", StringComparison.OrdinalIgnoreCase) &&
+                entry.quantity > 0)
+            {
+                CreateWeaponSlot(entry.itemData, entry.quantity);
+            }
         }
 
-        List<InventoryEntry> inventory = InventoryManager.Instance.inventory;
-
-        Debug.Log("Inventory Count: " + inventory.Count);
-
-        foreach (InventoryEntry entry in inventory)
+        // 2. Runtime (durable) weapons
+        foreach (ItemInstance item in InventoryManager.Instance.runtimeInventory)
         {
-            if (entry.itemData == null)
+            if (item.itemData != null &&
+                item.itemData.category.Equals("Weapon", StringComparison.OrdinalIgnoreCase))
             {
-                Debug.LogWarning("Inventory entry has null itemData.");
-                continue;
-            }
-
-            Debug.Log($"Checking item: {entry.itemData.itemName}, Category: {entry.itemData.category}, Quantity: {entry.quantity}");
-
-            if (entry.itemData.category.Equals("Weapon", StringComparison.OrdinalIgnoreCase) && entry.quantity > 0)
-            {
-                Debug.Log("Adding to selector: " + entry.itemData.itemName);
-
-                GameObject slotGO = Instantiate(weaponSlotPrefab, itemScrollViewContent);
-                slotGO.name = "WeaponSlot_" + entry.itemData.itemName + "_" + Guid.NewGuid().ToString("N");
-
-                RectTransform rt = slotGO.GetComponent<RectTransform>();
-                if (rt != null)
-                {
-                    rt.localScale = Vector3.one;
-                    rt.anchoredPosition3D = Vector3.zero;
-                }
-
-                Image slotImage = slotGO.GetComponent<Image>();
-                if (slotImage != null)
-                {
-                    slotImage.color = UnityEngine.Random.ColorHSV();
-                }
-
-                Transform itemInfo = slotGO.transform.Find("ItemInfo");
-                if (itemInfo != null)
-                {
-                    Transform iconTransform = itemInfo.Find("Icon");
-                    if (iconTransform != null)
-                    {
-                        Image iconImage = iconTransform.GetComponent<Image>();
-                        if (iconImage != null)
-                        {
-                            iconImage.sprite = entry.itemData.icon;
-                            iconImage.preserveAspect = true;
-                            iconImage.color = Color.white;
-                            Debug.Log("Assigned icon: " + entry.itemData.icon.name);
-                        }
-                    }
-                }
-
-                Slider durabilitySlider = slotGO.GetComponentInChildren<Slider>();
-                if (durabilitySlider != null)
-                {
-                    Color rarityColor = GetRarityColor(entry.itemData.rarity);
-                    Color backgroundColor = DarkenColor(rarityColor, 0.5f);
-
-                    Transform bgTransform = durabilitySlider.transform.Find("Background");
-                    if (bgTransform != null)
-                    {
-                        Image background = bgTransform.GetComponent<Image>();
-                        if (background != null)
-                            background.color = backgroundColor;
-                    }
-
-                    Transform fillTransform = durabilitySlider.transform.Find("Fill Area/Fill");
-                    if (fillTransform != null)
-                    {
-                        Image fillImage = fillTransform.GetComponent<Image>();
-                        if (fillImage != null)
-                            fillImage.color = rarityColor;
-                    }
-                }
-
-                Button button = slotGO.GetComponent<Button>();
-                if (button != null)
-                {
-                    InventoryItemData capturedItem = entry.itemData;
-                    button.onClick.AddListener(() => AssignWeapon(capturedItem));
-                }
+                CreateWeaponSlot(item.itemData, item.quantity, item.currentDurability);
             }
         }
 
         LayoutRebuilder.ForceRebuildLayoutImmediate(itemScrollViewContent.GetComponent<RectTransform>());
+    }
+
+    void CreateWeaponSlot(InventoryItemData itemData, int quantity, int currentDurability = -1)
+    {
+        GameObject slotGO = Instantiate(weaponSlotPrefab, itemScrollViewContent);
+        slotGO.name = "WeaponSlot_" + itemData.itemName + "_" + Guid.NewGuid().ToString("N");
+
+        RectTransform rt = slotGO.GetComponent<RectTransform>();
+        if (rt != null)
+        {
+            rt.localScale = Vector3.one;
+            rt.anchoredPosition3D = Vector3.zero;
+        }
+
+        InventoryItemUI ui = slotGO.GetComponent<InventoryItemUI>();
+        if (ui != null)
+        {
+            int durabilityToUse = itemData.isDurable ? currentDurability : -1;
+            ui.Setup(itemData, quantity, durabilityToUse);
+        }
+
+        Button button = slotGO.GetComponent<Button>();
+        if (button != null)
+        {
+            button.onClick.RemoveAllListeners();
+            button.onClick.AddListener(() => AssignWeapon(itemData));
+        }
     }
 
     void AssignWeapon(InventoryItemData selectedItem)
@@ -177,10 +138,5 @@ public class GearUpWeaponSelector : MonoBehaviour
             case ItemRarity.Legendary: return new Color(0.9f, 0.6f, 0.1f);
             default: return Color.white;
         }
-    }
-
-    private Color DarkenColor(Color color, float amount = 0.5f)
-    {
-        return new Color(color.r * amount, color.g * amount, color.b * amount, color.a);
     }
 }

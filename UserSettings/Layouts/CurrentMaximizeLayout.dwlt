@@ -246,7 +246,7 @@ MonoBehaviour:
       scrollPos: {x: 0, y: 0}
       m_SelectedIDs: 
       m_LastClickedID: 0
-      m_ExpandedIDs: f0c5ffff04fbffff54b8000064b80000bcb80000d6b8000022b900002cb9000042b9000030ba00003aba000050ba0000f6ba0000
+      m_ExpandedIDs: f0c5ffff04fbffff54b8000064b80000d6b8000022b900002cb9000042b9000030ba00003aba000050ba0000f6ba0000
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -1094,7 +1094,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/_Project/Prefabs
+    - Assets/_Project/Resources/Loot
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
@@ -1104,15 +1104,15 @@ MonoBehaviour:
   m_ViewMode: 1
   m_StartGridSize: 64
   m_LastFolders:
-  - Assets/_Project/Prefabs
+  - Assets/_Project/Resources/Loot
   m_LastFoldersGridSize: -1
   m_LastProjectPath: C:\Users\Hunter\MyGameBackup
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
     scrollPos: {x: 0, y: 31}
-    m_SelectedIDs: 5cbe0000
-    m_LastClickedID: 48732
+    m_SelectedIDs: 5ebe0000
+    m_LastClickedID: 48734
     m_ExpandedIDs: 00000000d6bd0000d8bd0000dabd0000dcbd0000debd0000e0bd0000
     m_RenameOverlay:
       m_UserAcceptedRename: 0

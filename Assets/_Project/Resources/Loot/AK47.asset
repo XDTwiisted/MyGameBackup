@@ -16,13 +16,13 @@ MonoBehaviour:
   itemName: AK-47
   icon: {fileID: 21300000, guid: 6daa3f6a352f79145aefc2d43a4c5f9b, type: 3}
   category: Weapon
-  description: 
+  description: 20 Damage
   restoreHunger: 0
   restoreThirst: 0
   restoreHealth: 0
   maxDurability: 100
   isDurable: 1
   rarity: 2
-  dropChance: 0.824
+  dropChance: 0.163
   minQuantity: 1
   maxQuantity: 1

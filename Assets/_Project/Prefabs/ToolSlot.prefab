@@ -118,6 +118,7 @@ MonoBehaviour:
   quantityText: {fileID: 5633281324370697555}
   durabilityText: {fileID: 0}
   useButton: {fileID: 0}
+  durabilitySlider: {fileID: 0}
   fillImage: {fileID: 4523645757383115663}
   backgroundImage: {fileID: 7880954302146880912}
 --- !u!114 &6005509338513114114

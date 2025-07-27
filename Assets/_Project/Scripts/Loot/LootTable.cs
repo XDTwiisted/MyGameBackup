@@ -10,7 +10,10 @@ public class LootTable : MonoBehaviour
         [Range(0f, 100f)] public float dropChance;
     }
 
-    [Header("Rarity Drop Chances (Should total 100%)")]
+    [Header("Step 1: Global Loot Roll")]
+    [Range(0f, 1f)] public float lootChance = 0.75f;
+
+    [Header("Step 2: Rarity Drop Chances (must total ~100%)")]
     public List<RarityDropChance> rarityChances = new List<RarityDropChance>
     {
         new RarityDropChance { rarity = ItemRarity.Common, dropChance = 70f },
@@ -20,7 +23,7 @@ public class LootTable : MonoBehaviour
         new RarityDropChance { rarity = ItemRarity.Legendary, dropChance = 1f }
     };
 
-    private Dictionary<ItemRarity, List<LootItem>> lootByRarity = new Dictionary<ItemRarity, List<LootItem>>();
+    private Dictionary<ItemRarity, List<InventoryItemData>> lootByRarity = new();
 
     private void Awake()
     {
@@ -30,7 +33,6 @@ public class LootTable : MonoBehaviour
     private void LoadLootFromResources()
     {
         lootByRarity.Clear();
-
         InventoryItemData[] allLoot = Resources.LoadAll<InventoryItemData>("Loot");
 
         foreach (var item in allLoot)
@@ -38,26 +40,60 @@ public class LootTable : MonoBehaviour
             if (item == null) continue;
 
             if (!lootByRarity.ContainsKey(item.rarity))
-            {
-                lootByRarity[item.rarity] = new List<LootItem>();
-            }
+                lootByRarity[item.rarity] = new List<InventoryItemData>();
 
-            lootByRarity[item.rarity].Add(new LootItem(item, item.minQuantity, item.maxQuantity, item.dropChance));
+            lootByRarity[item.rarity].Add(item);
         }
 
         Debug.Log($"[LootTable] Loaded {allLoot.Length} items from Resources/Loot.");
     }
 
-    public List<LootItem> GetLoot()
+    public List<ItemInstance> GetLoot()
     {
-        List<LootItem> drops = new List<LootItem>();
+        List<ItemInstance> drops = new();
 
-        ItemRarity selectedRarity = RollForRarity();
-
-        if (lootByRarity.TryGetValue(selectedRarity, out var items) && items.Count > 0)
+        // Step 1: Global loot chance
+        float globalRoll = Random.Range(0f, 1f);
+        if (globalRoll > lootChance)
         {
-            LootItem item = items[Random.Range(0, items.Count)];
-            drops.Add(item);
+            Debug.Log("[LootTable] No loot (global chance roll failed)");
+            return drops;
+        }
+
+        // Step 2: Roll for rarity
+        ItemRarity selectedRarity = RollForRarity();
+        Debug.Log($"[LootTable] Rolled rarity: {selectedRarity}");
+
+        if (!lootByRarity.TryGetValue(selectedRarity, out var items) || items.Count == 0)
+        {
+            Debug.LogWarning($"[LootTable] No items found for rarity {selectedRarity}");
+            return drops;
+        }
+
+        // Step 3: Weighted selection based on dropChance
+        InventoryItemData selectedItem = SelectWeightedItem(items);
+
+        if (selectedItem == null)
+        {
+            Debug.LogWarning("[LootTable] No item passed dropChance check");
+            return drops;
+        }
+
+        int quantity = Random.Range(selectedItem.minQuantity, selectedItem.maxQuantity + 1);
+
+        if (selectedItem.isDurable)
+        {
+            for (int i = 0; i < quantity; i++)
+            {
+                int durability = Random.Range(1, selectedItem.maxDurability + 1);
+                drops.Add(new ItemInstance(selectedItem, 1, durability));
+                Debug.Log($"[LootTable] Dropped durable: {selectedItem.itemName} (Durability: {durability})");
+            }
+        }
+        else
+        {
+            drops.Add(new ItemInstance(selectedItem, quantity, 0));
+            Debug.Log($"[LootTable] Dropped stackable: {selectedItem.itemName} x{quantity}");
         }
 
         return drops;
@@ -75,6 +111,27 @@ public class LootTable : MonoBehaviour
                 return rarity.rarity;
         }
 
-        return ItemRarity.Common; // fallback
+        return ItemRarity.Common;
+    }
+
+    private InventoryItemData SelectWeightedItem(List<InventoryItemData> items)
+    {
+        float totalWeight = 0f;
+        foreach (var item in items)
+        {
+            totalWeight += item.dropChance;
+        }
+
+        float roll = Random.Range(0f, totalWeight);
+        float cumulative = 0f;
+
+        foreach (var item in items)
+        {
+            cumulative += item.dropChance;
+            if (roll <= cumulative)
+                return item;
+        }
+
+        return null;
     }
 }

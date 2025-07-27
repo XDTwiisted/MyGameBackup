@@ -59,7 +59,7 @@ public class ExplorationManager : MonoBehaviour
             return;
         }
 
-        List<LootItem> lootFound = lootTable.GetLoot();
+        List<ItemInstance> lootFound = lootTable.GetLoot();
 
         if (lootFound == null || lootFound.Count == 0)
         {
@@ -69,23 +69,22 @@ public class ExplorationManager : MonoBehaviour
 
         Debug.Log($"Loot found count: {lootFound.Count}");
 
-        foreach (var loot in lootFound)
+        foreach (var item in lootFound)
         {
-            if (loot == null || loot.itemData == null)
+            if (item == null || item.itemData == null)
             {
-                Debug.LogWarning("LootItem or itemData is null.");
+                Debug.LogWarning("ItemInstance or itemData is null.");
                 continue;
             }
 
-            int quantityToAdd = Mathf.Max(1, loot.minQuantity);
-            InventoryManager.Instance.AddItem(loot.itemData, quantityToAdd);
-            Debug.Log($"Found {quantityToAdd}x {loot.itemData.itemName} while exploring!");
+            InventoryManager.Instance.AddItemInstance(item);
+            Debug.Log($"Found {item.quantity}x {item.itemData.itemName} while exploring! (Durability: {item.currentDurability})");
 
             if (explorationDialogueManager != null)
             {
-                for (int i = 0; i < quantityToAdd; i++)
+                for (int i = 0; i < item.quantity; i++)
                 {
-                    explorationDialogueManager.FoundItem(loot.itemData);
+                    explorationDialogueManager.FoundItem(item.itemData);
                 }
             }
         }
