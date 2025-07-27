@@ -120,4 +120,6 @@ public class InventoryUIManager : MonoBehaviour
         miscTabButton.interactable = category != "Misc";
         healthTabButton.interactable = category != "Health";
     }
+
+
 }
