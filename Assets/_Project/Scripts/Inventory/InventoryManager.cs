@@ -171,6 +171,17 @@ public class InventoryManager : MonoBehaviour
         RefreshUI();
     }
 
+    public void ClearAllItems()
+    {
+        inventory.Clear();
+        runtimeInventory.Clear();
+    }
+
+    public (List<InventoryEntry>, List<ItemInstance>) GetAllItems()
+    {
+        return (new List<InventoryEntry>(inventory), new List<ItemInstance>(runtimeInventory));
+    }
+
     public string CurrentCategory => currentCategory;
 
     public void SetCategory(string category)
@@ -194,6 +205,9 @@ public class InventoryManager : MonoBehaviour
     {
         if (InventoryUIManager.Instance != null)
             InventoryUIManager.Instance.RefreshInventoryDisplay();
+
+        if (StashManagerUI.Instance != null)
+            StashManagerUI.Instance.RefreshStashUI();
     }
 
     private void SaveInventoryNow()

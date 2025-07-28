@@ -23,5 +23,14 @@ public class DebugControls : MonoBehaviour
         {
             Debug.LogWarning("InventoryManager instance not found.");
         }
+
+        if (StashManager.Instance != null)
+        {
+            StashManager.Instance.ClearStash();
+        }
+        else
+        {
+            Debug.LogWarning("StashManager instance not found.");
+        }
     }
 }

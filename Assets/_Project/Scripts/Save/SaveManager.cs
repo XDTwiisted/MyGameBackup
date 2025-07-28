@@ -14,6 +14,8 @@ public class ItemInstanceSave
         quantity = qty;
         currentDurability = durability;
     }
+
+    public ItemInstanceSave() { }
 }
 
 [System.Serializable]
@@ -26,8 +28,11 @@ public static class SaveManager
 {
     private const string InventoryKey = "inventory";
     private const string RuntimeInventoryKey = "runtimeInventory";
+    private const string StashInventoryKey = "stashInventory";
+    private const string StashRuntimeKey = "stashRuntime";
 
-    // Save non-durable stackable items (e.g., food, meds)
+    // ---------- INVENTORY ----------
+
     public static void SaveInventory(List<InventoryEntry> inventory)
     {
         InventorySaveData saveData = new InventorySaveData();
@@ -43,11 +48,9 @@ public static class SaveManager
         string json = JsonUtility.ToJson(saveData);
         PlayerPrefs.SetString(InventoryKey, json);
         PlayerPrefs.Save();
-
         Debug.Log("Inventory saved: " + json);
     }
 
-    // Load stackable items
     public static List<InventoryEntry> LoadInventory()
     {
         List<InventoryEntry> loadedInventory = new List<InventoryEntry>();
@@ -55,79 +58,140 @@ public static class SaveManager
         if (PlayerPrefs.HasKey(InventoryKey))
         {
             string json = PlayerPrefs.GetString(InventoryKey);
-            Debug.Log("Inventory loaded from PlayerPrefs: " + json);
-
             InventorySaveData saveData = JsonUtility.FromJson<InventorySaveData>(json);
 
-            foreach (var saveItem in saveData.items)
+            foreach (var item in saveData.items)
             {
-                InventoryItemData item = ItemDatabase.FindItemByID(saveItem.itemID);
-                if (item != null)
+                var itemData = ItemDatabase.FindItemByID(item.itemID);
+                if (itemData != null)
                 {
-                    loadedInventory.Add(new InventoryEntry(item, saveItem.count));
-                    Debug.Log($"Loaded item: {item.itemName} x{saveItem.count}");
+                    loadedInventory.Add(new InventoryEntry(itemData, item.count));
+                    Debug.Log($"Loaded inventory item: {itemData.itemName} x{item.count}");
                 }
                 else
                 {
-                    Debug.LogWarning("Could not find InventoryItemData for ID: " + saveItem.itemID);
+                    Debug.LogWarning("Missing InventoryItemData for: " + item.itemID);
                 }
             }
-        }
-        else
-        {
-            Debug.Log("No inventory found in PlayerPrefs.");
         }
 
         return loadedInventory;
     }
 
-    // Save durable runtime-only items (e.g., weapons, tools)
     public static void SaveRuntimeInventory(List<ItemInstance> runtimeInventory)
     {
-        List<ItemInstanceSave> saveList = new List<ItemInstanceSave>();
-
-        foreach (var item in runtimeInventory)
+        RuntimeInventorySaveData saveData = new RuntimeInventorySaveData();
+        foreach (var instance in runtimeInventory)
         {
-            saveList.Add(new ItemInstanceSave(item.itemData.itemID, item.quantity, item.currentDurability));
+            saveData.items.Add(new ItemInstanceSave(instance.itemData.itemID, instance.quantity, instance.currentDurability));
         }
 
-        string json = JsonUtility.ToJson(new RuntimeInventorySaveData { items = saveList });
+        string json = JsonUtility.ToJson(saveData);
         PlayerPrefs.SetString(RuntimeInventoryKey, json);
         PlayerPrefs.Save();
-
         Debug.Log("Runtime inventory saved: " + json);
     }
 
-    // Load durable runtime-only items
     public static List<ItemInstance> LoadRuntimeInventory()
     {
         List<ItemInstance> loaded = new List<ItemInstance>();
 
-        if (!PlayerPrefs.HasKey(RuntimeInventoryKey))
+        if (PlayerPrefs.HasKey(RuntimeInventoryKey))
         {
-            Debug.Log("No runtime inventory found.");
-            return loaded;
-        }
+            string json = PlayerPrefs.GetString(RuntimeInventoryKey);
+            RuntimeInventorySaveData saveData = JsonUtility.FromJson<RuntimeInventorySaveData>(json);
 
-        string json = PlayerPrefs.GetString(RuntimeInventoryKey);
-        Debug.Log("Runtime inventory loaded: " + json);
-
-        RuntimeInventorySaveData saveData = JsonUtility.FromJson<RuntimeInventorySaveData>(json);
-
-        foreach (var saved in saveData.items)
-        {
-            InventoryItemData itemData = ItemDatabase.FindItemByID(saved.itemID);
-            if (itemData != null)
+            foreach (var item in saveData.items)
             {
-                loaded.Add(new ItemInstance(itemData, saved.quantity, saved.currentDurability));
-                Debug.Log($"Loaded durable item: {itemData.itemName} (Durability: {saved.currentDurability})");
-            }
-            else
-            {
-                Debug.LogWarning("Could not find InventoryItemData for runtime ID: " + saved.itemID);
+                var itemData = ItemDatabase.FindItemByID(item.itemID);
+                if (itemData != null)
+                {
+                    loaded.Add(new ItemInstance(itemData, item.quantity, item.currentDurability));
+                    Debug.Log($"Loaded runtime item: {itemData.itemName} x{item.quantity} (Durability: {item.currentDurability})");
+                }
+                else
+                {
+                    Debug.LogWarning("Missing ItemData for runtime item: " + item.itemID);
+                }
             }
         }
 
         return loaded;
+    }
+
+    // ---------- STASH ----------
+
+    public static void SaveStash(Dictionary<InventoryItemData, int> stashItems, List<ItemInstance> stashInstances)
+    {
+        InventorySaveData stashData = new InventorySaveData();
+        foreach (var kvp in stashItems)
+        {
+            stashData.items.Add(new InventoryItemSave
+            {
+                itemID = kvp.Key.itemID,
+                count = kvp.Value
+            });
+        }
+
+        PlayerPrefs.SetString(StashInventoryKey, JsonUtility.ToJson(stashData));
+
+        RuntimeInventorySaveData stashRuntimeData = new RuntimeInventorySaveData();
+        foreach (var instance in stashInstances)
+        {
+            stashRuntimeData.items.Add(new ItemInstanceSave(instance.itemData.itemID, instance.quantity, instance.currentDurability));
+        }
+
+        PlayerPrefs.SetString(StashRuntimeKey, JsonUtility.ToJson(stashRuntimeData));
+        PlayerPrefs.Save();
+
+        Debug.Log("Stash saved.");
+    }
+
+    public static (Dictionary<InventoryItemData, int>, List<ItemInstance>) LoadStash()
+    {
+        Dictionary<InventoryItemData, int> loadedStashItems = new Dictionary<InventoryItemData, int>();
+        List<ItemInstance> loadedStashInstances = new List<ItemInstance>();
+
+        if (PlayerPrefs.HasKey(StashInventoryKey))
+        {
+            string stashJson = PlayerPrefs.GetString(StashInventoryKey);
+            InventorySaveData stashData = JsonUtility.FromJson<InventorySaveData>(stashJson);
+
+            foreach (var entry in stashData.items)
+            {
+                var itemData = ItemDatabase.FindItemByID(entry.itemID);
+                if (itemData != null)
+                {
+                    loadedStashItems[itemData] = entry.count;
+                    Debug.Log($"Loaded stash stackable: {itemData.itemName} x{entry.count}");
+                }
+                else
+                {
+                    Debug.LogWarning("Missing item data for stash stackable: " + entry.itemID);
+                }
+            }
+        }
+
+        if (PlayerPrefs.HasKey(StashRuntimeKey))
+        {
+            string runtimeJson = PlayerPrefs.GetString(StashRuntimeKey);
+            RuntimeInventorySaveData runtimeData = JsonUtility.FromJson<RuntimeInventorySaveData>(runtimeJson);
+
+            foreach (var saved in runtimeData.items)
+            {
+                var itemData = ItemDatabase.FindItemByID(saved.itemID);
+                if (itemData != null)
+                {
+                    loadedStashInstances.Add(new ItemInstance(itemData, saved.quantity, saved.currentDurability));
+                    Debug.Log($"Loaded stash durable: {itemData.itemName} x{saved.quantity} (Durability: {saved.currentDurability})");
+                }
+                else
+                {
+                    Debug.LogWarning("Missing item data for stash durable: " + saved.itemID);
+                }
+            }
+        }
+
+        return (loadedStashItems, loadedStashInstances);
     }
 }

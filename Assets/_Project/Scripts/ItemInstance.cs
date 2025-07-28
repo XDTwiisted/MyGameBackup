@@ -7,7 +7,7 @@ public class ItemInstance
     public int quantity;
     public int currentDurability;
 
-    //  Constructor for durable items
+    // Constructor for durable items
     public ItemInstance(InventoryItemData data, int qty, int durability)
     {
         itemData = data;
@@ -15,6 +15,6 @@ public class ItemInstance
         currentDurability = durability;
     }
 
-    // Optional: default constructor for serialization
+    // Default constructor for serialization and Unity instantiation
     public ItemInstance() { }
 }

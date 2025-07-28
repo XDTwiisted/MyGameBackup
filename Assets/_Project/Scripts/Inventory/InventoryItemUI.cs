@@ -13,7 +13,7 @@ public class InventoryItemUI : MonoBehaviour
     public Button useButton;
 
     [Header("Durability Visuals")]
-    public Slider durabilitySlider; // NEW: required for value updates
+    public Slider durabilitySlider;
     public Image fillImage;
     [SerializeField] private Image backgroundImage;
 
@@ -87,6 +87,22 @@ public class InventoryItemUI : MonoBehaviour
                 useButton.onClick.AddListener(OnUseButtonClicked);
             }
         }
+    }
+
+    public void SetItem(InventoryItemData item, int quantity)
+    {
+        Setup(item, quantity);
+    }
+
+    public void SetItemInstance(ItemInstance instance)
+    {
+        if (instance == null || instance.itemData == null)
+        {
+            Debug.LogWarning("SetItemInstance: instance or itemData is null.");
+            return;
+        }
+
+        Setup(instance.itemData, instance.quantity, instance.currentDurability);
     }
 
     private void OnUseButtonClicked()
