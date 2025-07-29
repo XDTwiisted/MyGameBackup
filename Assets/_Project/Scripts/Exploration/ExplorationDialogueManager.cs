@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 public class ExplorationDialogueManager : MonoBehaviour
 {
-    public TextMeshProUGUI dialogueText; // Assign in Inspector
+    public TextMeshProUGUI dialogueText;
     public float dialogueInterval = 15f;
     public float foundItemDisplayTime = 4f;
 
@@ -39,35 +39,29 @@ public class ExplorationDialogueManager : MonoBehaviour
     private bool isExploring = false;
     private bool showingFoundItem = false;
 
-    // Now store full InventoryItemData instead of just names
     private Queue<InventoryItemData> foundItemQueue = new Queue<InventoryItemData>();
 
-    // Delay before starting dialogue
     public float startDelay = 8f;
     private float delayTimer = 0f;
     private bool delayPassed = false;
 
-    // Removed original Update()
-
-    // New method: call this every frame with scaled deltaTime
     public void UpdateDialogue(float deltaTime)
     {
         if (!isExploring)
             return;
 
-        // Wait until delay passes before showing dialogue lines
         if (!delayPassed)
         {
             delayTimer += deltaTime;
             if (delayTimer >= startDelay)
             {
                 delayPassed = true;
-                dialogueTimer = 0f;  // Reset dialogue timer
-                ShowRandomLine();    // Show first line after delay
+                dialogueTimer = 0f;
+                ShowRandomLine();
             }
             else
             {
-                return; // Wait for delay to finish
+                return;
             }
         }
 
@@ -89,14 +83,15 @@ public class ExplorationDialogueManager : MonoBehaviour
         delayPassed = false;
         delayTimer = 0f;
         dialogueTimer = 0f;
-        // Don't show dialogue immediately; wait for delay in UpdateDialogue()
+        gameObject.SetActive(true);
     }
 
     public void StopExploration()
     {
         isExploring = false;
         ClearFoundItemsQueue();
-        // Keep dialogue visible on returning, so no clearing here
+        ClearDialogue();
+        gameObject.SetActive(false);
     }
 
     public void ClearDialogue()
@@ -119,7 +114,6 @@ public class ExplorationDialogueManager : MonoBehaviour
         AddMessageToHistory(formattedLine);
     }
 
-    // Updated to accept InventoryItemData and show colored + bold text based on rarity
     public void FoundItem(InventoryItemData itemData)
     {
         if (itemData == null) return;
@@ -140,11 +134,7 @@ public class ExplorationDialogueManager : MonoBehaviour
         {
             InventoryItemData currentItem = foundItemQueue.Dequeue();
             string currentTime = DateTime.Now.ToString("h:mm tt");
-
-            // Get color hex based on rarity
             string colorHex = GetColorForRarity(currentItem.rarity);
-
-            // Wrap itemName in bold and color tags
             string foundMessage = $"[{currentTime}] I found <color={colorHex}><b>{currentItem.itemName}</b></color>!";
 
             AddMessageToHistory(foundMessage);
@@ -156,21 +146,20 @@ public class ExplorationDialogueManager : MonoBehaviour
         dialogueTimer = 0f;
     }
 
-    // Maps rarity enum to hex color codes
     private string GetColorForRarity(ItemRarity rarity)
     {
         switch (rarity)
         {
             case ItemRarity.Common:
-                return "#FFFFFF"; // White
+                return "#FFFFFF";
             case ItemRarity.Uncommon:
-                return "#00FF00"; // Green
+                return "#00FF00";
             case ItemRarity.Rare:
-                return "#800080"; // Purple
+                return "#800080";
             case ItemRarity.Legendary:
-                return "#FFA500"; // Orange
+                return "#FFA500";
             default:
-                return "#FFFFFF"; // Default white
+                return "#FFFFFF";
         }
     }
 
@@ -190,5 +179,12 @@ public class ExplorationDialogueManager : MonoBehaviour
         foundItemQueue.Clear();
         showingFoundItem = false;
         dialogueTimer = 0f;
+    }
+
+    public void Refresh()
+    {
+        gameObject.SetActive(true);
+        if (dialogueText != null)
+            dialogueText.enabled = true;
     }
 }

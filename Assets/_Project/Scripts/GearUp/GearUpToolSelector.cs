@@ -42,37 +42,25 @@ public class GearUpToolSelector : MonoBehaviour
             Destroy(child.gameObject);
         }
 
-        List<InventoryEntry> inventory = InventoryManager.Instance.inventory;
-        Debug.Log("Inventory Count: " + inventory.Count);
+        List<ItemInstance> stashItems = StashManager.Instance != null ? StashManager.Instance.stashInstances : null;
+        if (stashItems == null)
+            return;
 
-        foreach (InventoryEntry entry in inventory)
+        foreach (ItemInstance item in stashItems)
         {
-            if (entry.itemData == null)
-            {
-                Debug.LogWarning("Inventory entry has null itemData.");
+            if (item.itemData == null)
                 continue;
-            }
 
-            Debug.Log($"Checking item: {entry.itemData.itemName}, Category: {entry.itemData.category}, Quantity: {entry.quantity}");
-
-            if (entry.itemData.category.Equals("Tool", StringComparison.OrdinalIgnoreCase) && entry.quantity > 0)
+            if (item.itemData.category.Equals("Tool", StringComparison.OrdinalIgnoreCase))
             {
-                Debug.Log("Adding to selector: " + entry.itemData.itemName);
-
                 GameObject slotGO = Instantiate(toolSlotPrefab, itemScrollViewContent);
-                slotGO.name = "ToolSlot_" + entry.itemData.itemName + "_" + Guid.NewGuid().ToString("N");
+                slotGO.name = "ToolSlot_" + item.itemData.itemName + "_" + Guid.NewGuid().ToString("N");
 
                 RectTransform rt = slotGO.GetComponent<RectTransform>();
                 if (rt != null)
                 {
                     rt.localScale = Vector3.one;
                     rt.anchoredPosition3D = Vector3.zero;
-                }
-
-                Image slotImage = slotGO.GetComponent<Image>();
-                if (slotImage != null)
-                {
-                    slotImage.color = UnityEngine.Random.ColorHSV();
                 }
 
                 Transform itemInfo = slotGO.transform.Find("ItemInfo");
@@ -84,10 +72,9 @@ public class GearUpToolSelector : MonoBehaviour
                         Image iconImage = iconTransform.GetComponent<Image>();
                         if (iconImage != null)
                         {
-                            iconImage.sprite = entry.itemData.icon;
+                            iconImage.sprite = item.itemData.icon;
                             iconImage.preserveAspect = true;
                             iconImage.color = Color.white;
-                            Debug.Log("Assigned icon: " + entry.itemData.icon.name);
                         }
                     }
                 }
@@ -95,7 +82,7 @@ public class GearUpToolSelector : MonoBehaviour
                 Slider durabilitySlider = slotGO.GetComponentInChildren<Slider>();
                 if (durabilitySlider != null)
                 {
-                    Color rarityColor = GetRarityColor(entry.itemData.rarity);
+                    Color rarityColor = GetRarityColor(item.itemData.rarity);
                     Color backgroundColor = DarkenColor(rarityColor, 0.5f);
 
                     Transform bgTransform = durabilitySlider.transform.Find("Background");
@@ -118,7 +105,7 @@ public class GearUpToolSelector : MonoBehaviour
                 Button button = slotGO.GetComponent<Button>();
                 if (button != null)
                 {
-                    InventoryItemData capturedItem = entry.itemData;
+                    InventoryItemData capturedItem = item.itemData;
                     button.onClick.AddListener(() => AssignTool(capturedItem));
                 }
             }
@@ -133,7 +120,6 @@ public class GearUpToolSelector : MonoBehaviour
 
         if (toolSlotButton != null)
         {
-            // Set background color for rarity on main button
             Image buttonImage = toolSlotButton.GetComponent<Image>();
             if (buttonImage != null)
             {
@@ -141,7 +127,6 @@ public class GearUpToolSelector : MonoBehaviour
                 buttonImage.color = GetRarityColor(selectedItem.rarity);
             }
 
-            // Set sprite on ToolSlotButtonBackground child
             Transform iconTransform = toolSlotButton.transform.Find("ToolSlotButtonBackground");
             if (iconTransform != null)
             {
@@ -173,8 +158,8 @@ public class GearUpToolSelector : MonoBehaviour
         {
             case ItemRarity.Common: return new Color(0.8f, 0.8f, 0.8f);
             case ItemRarity.Uncommon: return new Color(0.2f, 0.8f, 0.2f);
-            case ItemRarity.Rare: return new Color(0.2f, 0.4f, 0.8f);
-            case ItemRarity.Epic: return new Color(0.6f, 0.2f, 0.8f);
+            case ItemRarity.Epic: return new Color(0.2f, 0.4f, 0.8f);       // Was Rare
+            case ItemRarity.Rare: return new Color(0.6f, 0.2f, 0.8f);       // Was Epic
             case ItemRarity.Legendary: return new Color(0.9f, 0.6f, 0.1f);
             default: return Color.white;
         }

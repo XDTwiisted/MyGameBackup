@@ -3,8 +3,6 @@ using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
 using System;
-using Button = UnityEngine.UI.Button;
-using Image = UnityEngine.UI.Image;
 
 public class GearUpFoodSelector : MonoBehaviour
 {
@@ -13,9 +11,9 @@ public class GearUpFoodSelector : MonoBehaviour
     public Button backButton;
     public GameObject itemSelectionPanel;
     public TextMeshProUGUI selectionTitle;
-    public Transform itemScrollViewContent; // the scroll area inside ItemSelectionPanel
-    public GameObject foodSlotPrefab; // the visual slot prefab shown in selection panel
-    public Transform gearUpFoodContent; // target container: GearUpPanel > Scroll View > Viewport > Content
+    public Transform itemScrollViewContent;
+    public GameObject foodSlotPrefab;
+    public Transform gearUpFoodContent;
 
     private void Start()
     {
@@ -43,21 +41,22 @@ public class GearUpFoodSelector : MonoBehaviour
             Destroy(child.gameObject);
         }
 
-        List<InventoryEntry> inventory = InventoryManager.Instance.inventory;
-        Debug.Log("Inventory Count: " + inventory.Count);
+        Dictionary<InventoryItemData, int> stashItems = StashManager.Instance != null ? StashManager.Instance.stashItems : null;
+        if (stashItems == null)
+            return;
 
-        foreach (InventoryEntry entry in inventory)
+        foreach (KeyValuePair<InventoryItemData, int> entry in stashItems)
         {
-            if (entry.itemData == null)
-            {
-                Debug.LogWarning("Inventory entry has null itemData.");
-                continue;
-            }
+            InventoryItemData itemData = entry.Key;
+            int quantity = entry.Value;
 
-            if (entry.itemData.category.Equals("Food", StringComparison.OrdinalIgnoreCase) && entry.quantity > 0)
+            if (itemData == null)
+                continue;
+
+            if (itemData.category.Equals("Food", StringComparison.OrdinalIgnoreCase) && quantity > 0)
             {
                 GameObject slotGO = Instantiate(foodSlotPrefab, itemScrollViewContent);
-                slotGO.name = "FoodSlot_" + entry.itemData.itemName + "_" + Guid.NewGuid().ToString("N");
+                slotGO.name = "FoodSlot_" + itemData.itemName + "_" + Guid.NewGuid().ToString("N");
 
                 RectTransform rt = slotGO.GetComponent<RectTransform>();
                 if (rt != null)
@@ -66,7 +65,6 @@ public class GearUpFoodSelector : MonoBehaviour
                     rt.anchoredPosition3D = Vector3.zero;
                 }
 
-                // Setup UI elements like icon, name, etc.
                 Transform itemInfo = slotGO.transform.Find("ItemInfo");
                 if (itemInfo != null)
                 {
@@ -76,18 +74,19 @@ public class GearUpFoodSelector : MonoBehaviour
                         Image iconImage = iconTransform.GetComponent<Image>();
                         if (iconImage != null)
                         {
-                            iconImage.sprite = entry.itemData.icon;
+                            iconImage.sprite = itemData.icon;
                             iconImage.preserveAspect = true;
                             iconImage.color = Color.white;
                         }
                     }
                 }
 
-                // Assign button click to add to GearUp panel
+                ApplyRarityColor(slotGO.transform, itemData.rarity);
+
                 Button button = slotGO.GetComponent<Button>();
                 if (button != null)
                 {
-                    InventoryItemData capturedItem = entry.itemData;
+                    InventoryItemData capturedItem = itemData;
                     button.onClick.AddListener(() => AddFoodToGearUp(capturedItem));
                 }
             }
@@ -122,6 +121,8 @@ public class GearUpFoodSelector : MonoBehaviour
             }
         }
 
+        ApplyRarityColor(newFoodSlot.transform, itemData.rarity);
+
         CloseFoodSelection();
     }
 
@@ -131,6 +132,32 @@ public class GearUpFoodSelector : MonoBehaviour
         {
             itemSelectionPanel.SetActive(false);
             Debug.Log("Closed food selection.");
+        }
+    }
+
+    private void ApplyRarityColor(Transform slot, ItemRarity rarity)
+    {
+        Slider raritySlider = slot.GetComponentInChildren<Slider>();
+        if (raritySlider != null && raritySlider.fillRect != null)
+        {
+            Image fillImage = raritySlider.fillRect.GetComponent<Image>();
+            if (fillImage != null)
+            {
+                fillImage.color = GetColorForRarity(rarity);
+            }
+        }
+    }
+
+    private Color GetColorForRarity(ItemRarity rarity)
+    {
+        switch (rarity)
+        {
+            case ItemRarity.Common: return Color.white;
+            case ItemRarity.Uncommon: return Color.green;
+            case ItemRarity.Rare: return Color.cyan;
+            case ItemRarity.Epic: return new Color(0.5f, 0f, 1f); // Purple
+            case ItemRarity.Legendary: return new Color(1f, 0.5f, 0f); // Orange
+            default: return Color.gray;
         }
     }
 }

@@ -1,12 +1,5 @@
 fileFormatVersion: 2
-guid: 84ce2f114ad12bd4ebafc77060220324
-AssetOrigin:
-  serializedVersion: 1
-  productId: 93897
-  packageName: Knight Sprite Sheet (Free)
-  packageVersion: 1.0
-  assetPath: Assets/_Project/Sprites/Characters/Knight_idle_01.png
-  uploadId: 199680
+guid: 37b5ed6f5f4dd75469bf36ea0ee274bd
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}

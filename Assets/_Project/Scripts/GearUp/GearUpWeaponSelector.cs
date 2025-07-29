@@ -38,19 +38,12 @@ public class GearUpWeaponSelector : MonoBehaviour
         foreach (Transform child in itemScrollViewContent)
             Destroy(child.gameObject);
 
-        // 1. Stackable weapons
-        foreach (InventoryEntry entry in InventoryManager.Instance.inventory)
-        {
-            if (entry.itemData != null &&
-                entry.itemData.category.Equals("Weapon", StringComparison.OrdinalIgnoreCase) &&
-                entry.quantity > 0)
-            {
-                CreateWeaponSlot(entry.itemData, entry.quantity);
-            }
-        }
+        List<ItemInstance> stashItems = StashManager.Instance != null ? StashManager.Instance.stashInstances : null;
 
-        // 2. Runtime (durable) weapons
-        foreach (ItemInstance item in InventoryManager.Instance.runtimeInventory)
+        if (stashItems == null)
+            return;
+
+        foreach (ItemInstance item in stashItems)
         {
             if (item.itemData != null &&
                 item.itemData.category.Equals("Weapon", StringComparison.OrdinalIgnoreCase))
