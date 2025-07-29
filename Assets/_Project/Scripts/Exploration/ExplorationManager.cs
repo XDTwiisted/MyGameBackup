@@ -4,8 +4,8 @@ using System.Collections.Generic;
 
 public class ExplorationManager : MonoBehaviour
 {
-    public LootTable lootTable;                    // Assign in Inspector
-    public float lootTickInterval = 10f;           // Seconds between loot rolls
+    public LootTable lootTable;
+    public float lootTickInterval = 10f;
 
     private float lootTimer = 0f;
     private bool isExploring = false;
@@ -24,6 +24,8 @@ public class ExplorationManager : MonoBehaviour
 
         PlayerPrefs.SetString(LastExplorationStartTimeKey, DateTime.UtcNow.ToBinary().ToString());
         PlayerPrefs.Save();
+
+        explorationDialogueManager?.ResetDialogue();
     }
 
     public void StopExploring()
@@ -37,7 +39,6 @@ public class ExplorationManager : MonoBehaviour
         explorationDialogueManager?.ClearFoundItemsQueue();
     }
 
-    // Called externally with deltaTime * speedMultiplier
     public void AdvanceExplorationTime(float deltaTime)
     {
         if (!isExploring) return;
@@ -109,5 +110,11 @@ public class ExplorationManager : MonoBehaviour
         {
             GenerateLoot();
         }
+    }
+
+    public void ReturnToBunker()
+    {
+        StopExploring();
+        Debug.Log("Returned to bunker and exploration has been stopped.");
     }
 }

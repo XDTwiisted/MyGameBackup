@@ -66,7 +66,7 @@ public class InventoryItemUI : MonoBehaviour
 
         if (fillImage != null && backgroundImage != null)
         {
-            Color rarityColor = GetRarityColor(item.rarity);
+            Color rarityColor = RarityColors.GetColor(item.rarity);
             fillImage.color = rarityColor;
             backgroundImage.color = DarkenColor(rarityColor, 0.5f);
         }
@@ -122,19 +122,6 @@ public class InventoryItemUI : MonoBehaviour
         currentQuantity = newQuantity;
         if (quantityText != null)
             quantityText.text = newQuantity.ToString();
-    }
-
-    private Color GetRarityColor(ItemRarity rarity)
-    {
-        switch (rarity)
-        {
-            case ItemRarity.Common: return new Color(0.8f, 0.8f, 0.8f);
-            case ItemRarity.Uncommon: return new Color(0.2f, 0.8f, 0.2f);
-            case ItemRarity.Rare: return new Color(0.2f, 0.4f, 0.8f);
-            case ItemRarity.Epic: return new Color(0.6f, 0.2f, 0.8f);
-            case ItemRarity.Legendary: return new Color(0.9f, 0.6f, 0.1f);
-            default: return Color.white;
-        }
     }
 
     private Color DarkenColor(Color color, float amount = 0.5f)

@@ -74,6 +74,8 @@ public class GearUpWeaponSelector : MonoBehaviour
             ui.Setup(itemData, quantity, durabilityToUse);
         }
 
+        ApplyRarityColorToSlider(slotGO.transform, itemData.rarity);
+
         Button button = slotGO.GetComponent<Button>();
         if (button != null)
         {
@@ -92,7 +94,7 @@ public class GearUpWeaponSelector : MonoBehaviour
             if (buttonImage != null)
             {
                 buttonImage.sprite = null;
-                buttonImage.color = GetRarityColor(selectedItem.rarity);
+                buttonImage.color = RarityColors.GetColor(selectedItem.rarity);
             }
 
             Transform iconTransform = weaponSlotButton.transform.Find("WeaponSlotButtonBackground");
@@ -120,16 +122,34 @@ public class GearUpWeaponSelector : MonoBehaviour
         }
     }
 
-    private Color GetRarityColor(ItemRarity rarity)
+    private void ApplyRarityColorToSlider(Transform slot, ItemRarity rarity)
     {
-        switch (rarity)
+        Slider durabilitySlider = slot.GetComponentInChildren<Slider>();
+        if (durabilitySlider != null)
         {
-            case ItemRarity.Common: return new Color(0.8f, 0.8f, 0.8f);
-            case ItemRarity.Uncommon: return new Color(0.2f, 0.8f, 0.2f);
-            case ItemRarity.Rare: return new Color(0.2f, 0.4f, 0.8f);
-            case ItemRarity.Epic: return new Color(0.6f, 0.2f, 0.8f);
-            case ItemRarity.Legendary: return new Color(0.9f, 0.6f, 0.1f);
-            default: return Color.white;
+            Color fillColor = RarityColors.GetColor(rarity);
+            Color backgroundColor = DarkenColor(fillColor, 0.75f);
+
+            Transform fillTransform = durabilitySlider.transform.Find("Fill Area/Fill");
+            if (fillTransform != null)
+            {
+                Image fillImage = fillTransform.GetComponent<Image>();
+                if (fillImage != null)
+                    fillImage.color = fillColor;
+            }
+
+            Transform bgTransform = durabilitySlider.transform.Find("Background");
+            if (bgTransform != null)
+            {
+                Image bgImage = bgTransform.GetComponent<Image>();
+                if (bgImage != null)
+                    bgImage.color = backgroundColor;
+            }
         }
+    }
+
+    private Color DarkenColor(Color color, float amount = 0.75f)
+    {
+        return new Color(color.r * amount, color.g * amount, color.b * amount, color.a);
     }
 }

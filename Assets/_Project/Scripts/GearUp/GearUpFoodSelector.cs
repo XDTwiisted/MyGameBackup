@@ -143,21 +143,28 @@ public class GearUpFoodSelector : MonoBehaviour
             Image fillImage = raritySlider.fillRect.GetComponent<Image>();
             if (fillImage != null)
             {
-                fillImage.color = GetColorForRarity(rarity);
+                Color fillColor = GetColorForRarity(rarity);
+                fillImage.color = fillColor;
+
+                // Set background color slightly darker than fill
+                foreach (Image img in raritySlider.GetComponentsInChildren<Image>())
+                {
+                    if (img != fillImage)
+                    {
+                        img.color = DarkenColor(fillColor, 0.75f);
+                    }
+                }
             }
         }
     }
 
     private Color GetColorForRarity(ItemRarity rarity)
     {
-        switch (rarity)
-        {
-            case ItemRarity.Common: return Color.white;
-            case ItemRarity.Uncommon: return Color.green;
-            case ItemRarity.Rare: return Color.cyan;
-            case ItemRarity.Epic: return new Color(0.5f, 0f, 1f); // Purple
-            case ItemRarity.Legendary: return new Color(1f, 0.5f, 0f); // Orange
-            default: return Color.gray;
-        }
+        return RarityColors.GetColor(rarity);
+    }
+
+    private Color DarkenColor(Color color, float factor)
+    {
+        return new Color(color.r * factor, color.g * factor, color.b * factor, color.a);
     }
 }

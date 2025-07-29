@@ -45,6 +45,10 @@ public class ExitBunkerManager : MonoBehaviour
     private bool staminaLocked = false;
     private bool staminaMustFullyRecharge = false;
 
+    private GameObject backgroundGroup;
+    private ScrollingBackground[] backgroundScrollers;
+    private ScrollingForeground[] foregroundScrollers;
+
     private const string STATE_KEY = "gameState";
     private const string EXPLORE_TIME_KEY = "explorationStartTime";
     private const string RETURN_TIME_KEY = "returnStartTime";
@@ -65,7 +69,13 @@ public class ExitBunkerManager : MonoBehaviour
         if (explorationDialogue != null && explorationDialogue.dialogueText != null)
             explorationDialogue.dialogueText.enabled = false;
 
-        RestoreState();
+        backgroundGroup = GameObject.Find("Background");
+        if (backgroundGroup != null)
+        {
+            backgroundGroup.SetActive(false);
+            backgroundScrollers = backgroundGroup.GetComponentsInChildren<ScrollingBackground>(true);
+            foregroundScrollers = backgroundGroup.GetComponentsInChildren<ScrollingForeground>(true);
+        }
 
         returnButton.onClick.AddListener(StartReturnTimer);
         subtractOneHourButton?.onClick.AddListener(SubtractOneHour);
@@ -82,14 +92,20 @@ public class ExitBunkerManager : MonoBehaviour
             PlayerPrefs.SetString(EXPLORE_TIME_KEY, DateTime.UtcNow.ToBinary().ToString());
             PlayerPrefs.SetString(STATE_KEY, "exploring");
             PlayerPrefs.Save();
+
             SetExplorationUIState(true);
             StartExplorationInternal();
+
+            if (backgroundGroup != null) backgroundGroup.SetActive(true);
+            SetBackgroundScrolling(true, false);
         });
 
         cancelExplorationButton?.onClick.RemoveAllListeners();
         cancelExplorationButton?.onClick.AddListener(() => gearUpPanel.SetActive(false));
 
         gearUpPanel?.SetActive(false);
+
+        RestoreState();
     }
 
     void Update()
@@ -114,6 +130,7 @@ public class ExitBunkerManager : MonoBehaviour
         {
             float delta = Time.deltaTime * CurrentSpeedMultiplier;
             timer -= delta;
+            UpdateTimerDisplay(timer);
 
             if (timer <= 0f)
             {
@@ -121,13 +138,6 @@ public class ExitBunkerManager : MonoBehaviour
                 isCountingDown = false;
                 FinishReturn();
             }
-
-            UpdateTimerDisplay(timer);
-
-            DateTime simulatedReturnStart = DateTime.UtcNow - TimeSpan.FromSeconds(timer);
-            PlayerPrefs.SetString(RETURN_TIME_KEY, simulatedReturnStart.ToBinary().ToString());
-            PlayerPrefs.SetFloat(RETURN_DURATION_KEY, timer);
-            PlayerPrefs.Save();
         }
 
         if (isExploring && staminaBar.gameObject.activeSelf)
@@ -186,145 +196,221 @@ public class ExitBunkerManager : MonoBehaviour
 
     private void ToggleGearUpPanel()
     {
-        gearUpPanel?.SetActive(!gearUpPanel.activeSelf);
+        gearUpPanel.SetActive(!gearUpPanel.activeSelf);
     }
 
-    public void ToggleStashPanel()
+    private void ToggleStashPanel()
     {
-        if (stashPanel == null || inventoryPanel == null)
-            return;
+        bool isOpening = !stashPanel.activeSelf;
 
-        bool stashIsOpen = stashPanel.activeSelf;
+        stashPanel.SetActive(isOpening);
         inventoryPanel.SetActive(false);
-        stashPanel.SetActive(!stashIsOpen);
-
-        if (!stashIsOpen)
-            StashManagerUI.Instance?.RefreshStashUI();
-    }
-
-    private void SetExplorationUIState(bool exploring)
-    {
-        isExploring = exploring;
-
-        stashButton?.SetActive(!exploring);
-        stashPanel?.SetActive(false);
-        inventoryButton?.SetActive(exploring);
-        inventoryPanel?.SetActive(false);
-
-        if (explorationDialogue != null && explorationDialogue.dialogueText != null)
-            explorationDialogue.dialogueText.enabled = exploring || isCountingDown;
-    }
-
-    private void StartExplorationInternal(float restoredTime = 0f)
-    {
         gearUpPanel?.SetActive(false);
-        // We no longer hide the character on exploration start
-        exitBunkerButton.gameObject.SetActive(false);
-        returnButton.gameObject.SetActive(true);
 
-        timer = restoredTime;
-        isCountingUp = true;
-        isCountingDown = false;
-
-        staminaBar.gameObject.SetActive(true);
-        currentStamina = maxStamina;
-        staminaBar.value = currentStamina;
-        staminaLocked = false;
-
-        if (explorationDialogue != null)
+        if (isOpening)
         {
-            if (explorationDialogue.dialogueText != null)
-                explorationDialogue.dialogueText.enabled = true;
-
-            explorationDialogue.Refresh();
-            explorationDialogue.StartExploration();
+            StashManagerUI.Instance?.RefreshStashUI();
         }
+    }
+
+    private void StartExplorationInternal()
+    {
+        isCountingUp = true;
+        isExploring = true;
+        timer = 0f;
+
+        returnButton.gameObject.SetActive(true);
+        exitBunkerButton.gameObject.SetActive(false);
+        inventoryButton.SetActive(true);
+        stashButton.SetActive(false);
+        stashPanel.SetActive(false);
+        gearUpPanel.SetActive(false);
+        staminaBar.gameObject.SetActive(true);
 
         explorationManager?.StartExploring();
-    }
-
-    private void RestoreState()
-    {
-        string state = PlayerPrefs.GetString(STATE_KEY, "bunker");
-
-        if (state == "exploring" && PlayerPrefs.HasKey(EXPLORE_TIME_KEY))
-        {
-            long binaryTime = Convert.ToInt64(PlayerPrefs.GetString(EXPLORE_TIME_KEY));
-            DateTime savedTime = DateTime.FromBinary(binaryTime);
-            TimeSpan elapsed = DateTime.UtcNow - savedTime;
-
-            SetExplorationUIState(true);
-            StartExplorationInternal((float)elapsed.TotalSeconds);
-        }
-        else
-        {
-            SetExplorationUIState(false);
-        }
+        FlipCharacter(false);
     }
 
     private void StartReturnTimer()
     {
-        isCountingDown = true;
+        if (!isCountingUp) return;
+
         isCountingUp = false;
+        isCountingDown = true;
 
-        float returnDuration = timer;
-        timer = returnDuration;
-
-        PlayerPrefs.SetString(STATE_KEY, "returning");
+        float duration = timer;
         PlayerPrefs.SetString(RETURN_TIME_KEY, DateTime.UtcNow.ToBinary().ToString());
-        PlayerPrefs.SetFloat(RETURN_DURATION_KEY, returnDuration);
+        PlayerPrefs.SetFloat(RETURN_DURATION_KEY, duration);
+        PlayerPrefs.SetString(STATE_KEY, "returning");
         PlayerPrefs.Save();
 
-        returnButton.gameObject.SetActive(false);
+        timer = duration;
 
-        if (explorationDialogue != null && explorationDialogue.dialogueText != null)
-            explorationDialogue.dialogueText.enabled = false;
-    }
-
-    private void SubtractOneHour()
-    {
-        timer = Mathf.Max(0f, timer - 3600f);
-    }
-
-    private void UpdateTimerDisplay(float time)
-    {
-        int totalSeconds = Mathf.FloorToInt(time);
-        int hours = totalSeconds / 3600;
-        int minutes = (totalSeconds % 3600) / 60;
-        int seconds = totalSeconds % 60;
-
-        explorationTimerText.text = $"Time Outside: {hours:00}:{minutes:00}:{seconds:00}";
+        SetBackgroundScrolling(true, true);
+        FlipCharacter(true);
+        staminaBar.gameObject.SetActive(true);
     }
 
     private void FinishReturn()
     {
         isCountingDown = false;
-        isCountingUp = false;
         isExploring = false;
 
-        PlayerPrefs.SetString(STATE_KEY, "bunker");
+        SetExplorationUIState(false);
+        staminaBar.gameObject.SetActive(false);
+
         PlayerPrefs.DeleteKey(EXPLORE_TIME_KEY);
         PlayerPrefs.DeleteKey(RETURN_TIME_KEY);
         PlayerPrefs.DeleteKey(RETURN_DURATION_KEY);
+        PlayerPrefs.SetString(STATE_KEY, "bunker");
         PlayerPrefs.Save();
 
-        explorationManager?.StopExploring();
-
-        returnButton.gameObject.SetActive(false);
-        exitBunkerButton.gameObject.SetActive(true);
-        character.SetActive(true);
-        staminaBar.gameObject.SetActive(false);
-
-        if (explorationDialogue != null && explorationDialogue.dialogueText != null)
-            explorationDialogue.dialogueText.enabled = false;
-
-        var items = InventoryManager.Instance?.GetAllItems();
-        if (items != null)
+        if (StashManager.Instance != null && InventoryManager.Instance != null)
         {
-            StashManager.Instance?.AddItems(items.Value.Item1, items.Value.Item2);
+            var (stackables, durables) = InventoryManager.Instance.GetAllItems();
+            StashManager.Instance.AddItems(stackables, durables);
+            InventoryManager.Instance.ClearAllItems();
         }
-        InventoryManager.Instance?.ClearInventory();
 
-        SetExplorationUIState(false);
+        explorationManager?.ReturnToBunker();
+
+        if (backgroundGroup != null)
+            backgroundGroup.SetActive(false);
+
+        if (character != null)
+        {
+            foreach (var sr in character.GetComponentsInChildren<SpriteRenderer>())
+                sr.flipX = false;
+        }
+    }
+
+    private void SetBackgroundScrolling(bool scroll, bool reverse)
+    {
+        if (backgroundScrollers != null)
+        {
+            foreach (var scroller in backgroundScrollers)
+            {
+                scroller.isScrolling = scroll;
+                scroller.reverseDirection = reverse;
+            }
+        }
+
+        if (foregroundScrollers != null)
+        {
+            foreach (var scroller in foregroundScrollers)
+            {
+                scroller.isScrolling = scroll;
+                scroller.reverseDirection = reverse;
+            }
+        }
+    }
+
+    private void SetExplorationUIState(bool exploring)
+    {
+        exitBunkerButton.gameObject.SetActive(!exploring);
+        returnButton.gameObject.SetActive(exploring);
+        inventoryButton.SetActive(exploring);
+        stashButton.SetActive(!exploring);
+    }
+
+    private void SubtractOneHour()
+    {
+        if (isCountingDown && timer >= 3600f)
+        {
+            timer -= 3600f;
+        }
+    }
+
+    private void UpdateTimerDisplay(float timeInSeconds)
+    {
+        TimeSpan time = TimeSpan.FromSeconds(timeInSeconds);
+        explorationTimerText.text = "Time Outside: " + time.ToString(@"hh\:mm\:ss");
+    }
+
+    private void RestoreState()
+    {
+        string state = PlayerPrefs.GetString(STATE_KEY, "bunker");
+        Debug.Log("[RestoreState] Loaded state: " + state);
+
+        if (state == "exploring")
+        {
+            SetExplorationUIState(true);
+            isCountingUp = true;
+            isExploring = true;
+
+            if (PlayerPrefs.HasKey(EXPLORE_TIME_KEY))
+            {
+                long binaryTime = Convert.ToInt64(PlayerPrefs.GetString(EXPLORE_TIME_KEY));
+                DateTime startTime = DateTime.FromBinary(binaryTime);
+                timer = (float)(DateTime.UtcNow - startTime).TotalSeconds;
+
+                Debug.Log("[RestoreState] Exploring: Recovered timer = " + timer);
+            }
+
+            if (backgroundGroup != null) backgroundGroup.SetActive(true);
+            SetBackgroundScrolling(true, false);
+            returnButton.gameObject.SetActive(true);
+            staminaBar.gameObject.SetActive(true);
+            FlipCharacter(false);
+        }
+        else if (state == "returning")
+        {
+            if (PlayerPrefs.HasKey(RETURN_TIME_KEY) && PlayerPrefs.HasKey(RETURN_DURATION_KEY))
+            {
+                long binaryTime = Convert.ToInt64(PlayerPrefs.GetString(RETURN_TIME_KEY));
+                float savedDuration = PlayerPrefs.GetFloat(RETURN_DURATION_KEY);
+
+                DateTime returnStart = DateTime.FromBinary(binaryTime);
+                float timePassed = (float)(DateTime.UtcNow - returnStart).TotalSeconds;
+                float timeLeft = savedDuration - timePassed;
+
+                Debug.Log("[RestoreState] Returning: duration=" + savedDuration + ", timePassed=" + timePassed + ", timeLeft=" + timeLeft);
+
+                if (timeLeft <= 0f)
+                {
+                    FinishReturn();
+                }
+                else
+                {
+                    timer = timeLeft;
+                    isCountingDown = true;
+
+                    if (backgroundGroup != null) backgroundGroup.SetActive(true);
+                    SetBackgroundScrolling(true, true);
+                    staminaBar.gameObject.SetActive(false);
+                    FlipCharacter(true);
+                }
+            }
+            else
+            {
+                FinishReturn();
+            }
+        }
+        else
+        {
+            SetExplorationUIState(false);
+            timer = 0f;
+            FlipCharacter(false);
+        }
+    }
+
+    private void FlipCharacter(bool faceLeft)
+    {
+        if (character == null) return;
+
+        Transform walking = character.transform.Find("Walking");
+        Transform shadow1 = character.transform.Find("Shadow1");
+        Transform shadow2 = character.transform.Find("Shadow2");
+
+        bool flip = faceLeft;
+
+        if (walking?.GetComponent<SpriteRenderer>() != null)
+            walking.GetComponent<SpriteRenderer>().flipX = flip;
+
+        if (shadow1?.GetComponent<SpriteRenderer>() != null)
+            shadow1.GetComponent<SpriteRenderer>().flipX = flip;
+
+        if (shadow2?.GetComponent<SpriteRenderer>() != null)
+            shadow2.GetComponent<SpriteRenderer>().flipX = flip;
     }
 }

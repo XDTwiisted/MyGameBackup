@@ -103,6 +103,17 @@ public class ExplorationDialogueManager : MonoBehaviour
         }
     }
 
+    public void ResetDialogue()
+    {
+        isExploring = true;
+        delayPassed = false;
+        delayTimer = 0f;
+        dialogueTimer = 0f;
+        ClearDialogue();
+        ClearFoundItemsQueue();
+        gameObject.SetActive(true);
+    }
+
     void ShowRandomLine()
     {
         if (lines.Count == 0) return;
@@ -148,19 +159,8 @@ public class ExplorationDialogueManager : MonoBehaviour
 
     private string GetColorForRarity(ItemRarity rarity)
     {
-        switch (rarity)
-        {
-            case ItemRarity.Common:
-                return "#FFFFFF";
-            case ItemRarity.Uncommon:
-                return "#00FF00";
-            case ItemRarity.Rare:
-                return "#800080";
-            case ItemRarity.Legendary:
-                return "#FFA500";
-            default:
-                return "#FFFFFF";
-        }
+        Color color = RarityColors.GetColor(rarity);
+        return $"#{ColorUtility.ToHtmlStringRGB(color)}";
     }
 
     void AddMessageToHistory(string message)

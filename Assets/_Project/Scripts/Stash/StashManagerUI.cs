@@ -48,7 +48,6 @@ public class StashManagerUI : MonoBehaviour
             { "Health", healthTabButton }
         };
 
-        // Set up listeners
         weaponsTabButton.onClick.AddListener(() => ShowCategory("Weapon"));
         toolsTabButton.onClick.AddListener(() => ShowCategory("Tool"));
         foodTabButton.onClick.AddListener(() => ShowCategory("Food"));
@@ -85,7 +84,6 @@ public class StashManagerUI : MonoBehaviour
         var stash = StashManager.Instance;
         if (stash == null) return;
 
-        // Stackables
         foreach (var kvp in stash.GetAllStackables())
         {
             InventoryItemData item = kvp.Key;
@@ -102,11 +100,51 @@ public class StashManagerUI : MonoBehaviour
             }
         }
 
-        // Durables
         foreach (var instance in stash.GetAllInstances())
         {
             InventoryItemData item = instance.itemData;
             if (!IsInCategory(item)) continue;
+
+            GameObject slot = CreateSlotForItem(item);
+            if (slot == null) continue;
+
+            InventoryItemUI ui = slot.GetComponent<InventoryItemUI>();
+            if (ui != null)
+            {
+                ui.SetItemInstance(instance);
+            }
+        }
+    }
+
+    public void RefreshStashDisplay(string category = "All")
+    {
+        ClearUI();
+
+        var stash = StashManager.Instance;
+        if (stash == null) return;
+
+        foreach (var kvp in stash.GetAllStackables())
+        {
+            InventoryItemData item = kvp.Key;
+            int quantity = kvp.Value;
+            if (category != "All" && !item.category.Equals(category, System.StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            GameObject slot = CreateSlotForItem(item);
+            if (slot == null) continue;
+
+            InventoryItemUI ui = slot.GetComponent<InventoryItemUI>();
+            if (ui != null)
+            {
+                ui.SetItem(item, quantity);
+            }
+        }
+
+        foreach (var instance in stash.GetAllInstances())
+        {
+            InventoryItemData item = instance.itemData;
+            if (category != "All" && !item.category.Equals(category, System.StringComparison.OrdinalIgnoreCase))
+                continue;
 
             GameObject slot = CreateSlotForItem(item);
             if (slot == null) continue;
