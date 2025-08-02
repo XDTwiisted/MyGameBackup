@@ -3,6 +3,8 @@ using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
 using System;
+using Button = UnityEngine.UI.Button;
+using Image = UnityEngine.UI.Image;
 
 public class GearUpWeaponSelector : MonoBehaviour
 {
@@ -39,7 +41,6 @@ public class GearUpWeaponSelector : MonoBehaviour
             Destroy(child.gameObject);
 
         List<ItemInstance> stashItems = StashManager.Instance != null ? StashManager.Instance.stashInstances : null;
-
         if (stashItems == null)
             return;
 
@@ -48,15 +49,19 @@ public class GearUpWeaponSelector : MonoBehaviour
             if (item.itemData != null &&
                 item.itemData.category.Equals("Weapon", StringComparison.OrdinalIgnoreCase))
             {
-                CreateWeaponSlot(item.itemData, item.quantity, item.currentDurability);
+                CreateWeaponSlot(item, item.quantity, item.currentDurability);
             }
         }
 
         LayoutRebuilder.ForceRebuildLayoutImmediate(itemScrollViewContent.GetComponent<RectTransform>());
     }
 
-    void CreateWeaponSlot(InventoryItemData itemData, int quantity, int currentDurability = -1)
+    void CreateWeaponSlot(ItemInstance instance, int quantity, int currentDurability = -1)
     {
+        if (instance == null || instance.itemData == null) return;
+
+        InventoryItemData itemData = instance.itemData;
+
         GameObject slotGO = Instantiate(weaponSlotPrefab, itemScrollViewContent);
         slotGO.name = "WeaponSlot_" + itemData.itemName + "_" + Guid.NewGuid().ToString("N");
 
@@ -80,12 +85,19 @@ public class GearUpWeaponSelector : MonoBehaviour
         if (button != null)
         {
             button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(() => AssignWeapon(itemData));
+            button.onClick.AddListener(() => AssignWeapon(instance));
         }
     }
 
-    void AssignWeapon(InventoryItemData selectedItem)
+    void AssignWeapon(ItemInstance selectedInstance)
     {
+        if (selectedInstance == null || selectedInstance.itemData == null)
+        {
+            Debug.LogWarning("AssignWeapon: selectedInstance or itemData is null.");
+            return;
+        }
+
+        InventoryItemData selectedItem = selectedInstance.itemData;
         Debug.Log("Selected weapon: " + selectedItem.itemName);
 
         if (weaponSlotButton != null)
@@ -109,6 +121,9 @@ public class GearUpWeaponSelector : MonoBehaviour
                 }
             }
         }
+
+        //  Track weapon for exploration
+        GearUpSelectionManager.Instance?.AddDurable(selectedInstance);
 
         CloseWeaponSelection();
     }

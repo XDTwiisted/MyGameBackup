@@ -26,6 +26,7 @@ public class ExplorationManager : MonoBehaviour
         PlayerPrefs.Save();
 
         explorationDialogueManager?.ResetDialogue();
+        explorationDialogueManager?.gameObject.SetActive(true); //  Show it now
     }
 
     public void StopExploring()
@@ -37,7 +38,9 @@ public class ExplorationManager : MonoBehaviour
         PlayerPrefs.Save();
 
         explorationDialogueManager?.ClearFoundItemsQueue();
+        explorationDialogueManager?.gameObject.SetActive(false); //  Hide it now
     }
+
 
     public void AdvanceExplorationTime(float deltaTime)
     {

@@ -227,9 +227,35 @@ public class ExitBunkerManager : MonoBehaviour
         gearUpPanel.SetActive(false);
         staminaBar.gameObject.SetActive(true);
 
+        // Transfer selected gear to player's inventory
+        if (GearUpSelectionManager.Instance != null && InventoryManager.Instance != null)
+        {
+            var stackables = GearUpSelectionManager.Instance.GetStackables();
+            foreach (var entry in stackables)
+            {
+                InventoryManager.Instance.AddItem(entry.Key, entry.Value);
+            }
+
+            var durables = GearUpSelectionManager.Instance.GetDurables();
+            foreach (var item in durables)
+            {
+                InventoryManager.Instance.AddItemInstance(item);
+            }
+
+            GearUpSelectionManager.Instance.ClearSelections();
+        }
+
         explorationManager?.StartExploring();
         FlipCharacter(false);
+
+        if (explorationDialogue != null && explorationDialogue.dialogueText != null)
+            explorationDialogue.dialogueText.enabled = true;
+
+        InventoryUIManager.Instance?.RefreshInventoryDisplay();
     }
+
+
+
 
     private void StartReturnTimer()
     {
@@ -282,6 +308,9 @@ public class ExitBunkerManager : MonoBehaviour
             foreach (var sr in character.GetComponentsInChildren<SpriteRenderer>())
                 sr.flipX = false;
         }
+
+        if (explorationDialogue != null && explorationDialogue.dialogueText != null)
+            explorationDialogue.dialogueText.enabled = false;
     }
 
     private void SetBackgroundScrolling(bool scroll, bool reverse)

@@ -84,8 +84,8 @@ public class GearUpToolSelector : MonoBehaviour
                 Button button = slotGO.GetComponent<Button>();
                 if (button != null)
                 {
-                    InventoryItemData capturedItem = item.itemData;
-                    button.onClick.AddListener(() => AssignTool(capturedItem));
+                    ItemInstance capturedInstance = item;
+                    button.onClick.AddListener(() => AssignTool(capturedInstance));
                 }
             }
         }
@@ -93,9 +93,15 @@ public class GearUpToolSelector : MonoBehaviour
         LayoutRebuilder.ForceRebuildLayoutImmediate(itemScrollViewContent.GetComponent<RectTransform>());
     }
 
-    void AssignTool(InventoryItemData selectedItem)
+    void AssignTool(ItemInstance selectedInstance)
     {
-        Debug.Log("Selected tool: " + selectedItem.itemName);
+        if (selectedInstance == null || selectedInstance.itemData == null)
+        {
+            Debug.LogWarning("AssignTool: selectedInstance or itemData is null.");
+            return;
+        }
+
+        Debug.Log("Selected tool: " + selectedInstance.itemData.itemName);
 
         if (toolSlotButton != null)
         {
@@ -103,7 +109,7 @@ public class GearUpToolSelector : MonoBehaviour
             if (buttonImage != null)
             {
                 buttonImage.sprite = null;
-                buttonImage.color = RarityColors.GetColor(selectedItem.rarity);
+                buttonImage.color = RarityColors.GetColor(selectedInstance.itemData.rarity);
             }
 
             Transform iconTransform = toolSlotButton.transform.Find("ToolSlotButtonBackground");
@@ -112,12 +118,15 @@ public class GearUpToolSelector : MonoBehaviour
                 Image iconImage = iconTransform.GetComponent<Image>();
                 if (iconImage != null)
                 {
-                    iconImage.sprite = selectedItem.icon;
+                    iconImage.sprite = selectedInstance.itemData.icon;
                     iconImage.preserveAspect = true;
                     iconImage.color = Color.white;
                 }
             }
         }
+
+        //  Track this durable item for later use during exploration
+        GearUpSelectionManager.Instance?.AddDurable(selectedInstance);
 
         CloseToolSelection();
     }

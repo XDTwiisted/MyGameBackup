@@ -15,6 +15,8 @@ public class GearUpFoodSelector : MonoBehaviour
     public GameObject foodSlotPrefab;
     public Transform gearUpFoodContent;
 
+    private HashSet<InventoryItemData> selectedItems = new HashSet<InventoryItemData>();
+
     private void Start()
     {
         addFoodButton.onClick.AddListener(OpenFoodSelection);
@@ -30,18 +32,13 @@ public class GearUpFoodSelector : MonoBehaviour
     {
         Debug.Log("Opening food selection...");
 
-        if (itemSelectionPanel != null)
-            itemSelectionPanel.SetActive(true);
-
-        if (selectionTitle != null)
-            selectionTitle.text = "Select Food";
+        itemSelectionPanel?.SetActive(true);
+        selectionTitle.text = "Select Food";
 
         foreach (Transform child in itemScrollViewContent)
-        {
             Destroy(child.gameObject);
-        }
 
-        Dictionary<InventoryItemData, int> stashItems = StashManager.Instance != null ? StashManager.Instance.stashItems : null;
+        Dictionary<InventoryItemData, int> stashItems = StashManager.Instance?.stashItems;
         if (stashItems == null)
             return;
 
@@ -50,10 +47,11 @@ public class GearUpFoodSelector : MonoBehaviour
             InventoryItemData itemData = entry.Key;
             int quantity = entry.Value;
 
-            if (itemData == null)
+            if (itemData == null || quantity <= 0)
                 continue;
 
-            if (itemData.category.Equals("Food", StringComparison.OrdinalIgnoreCase) && quantity > 0)
+            if (itemData.category.Equals("Food", StringComparison.OrdinalIgnoreCase) &&
+                !selectedItems.Contains(itemData))
             {
                 GameObject slotGO = Instantiate(foodSlotPrefab, itemScrollViewContent);
                 slotGO.name = "FoodSlot_" + itemData.itemName + "_" + Guid.NewGuid().ToString("N");
@@ -65,19 +63,15 @@ public class GearUpFoodSelector : MonoBehaviour
                     rt.anchoredPosition3D = Vector3.zero;
                 }
 
-                Transform itemInfo = slotGO.transform.Find("ItemInfo");
+                Transform itemInfo = slotGO.transform.Find("ItemInfo/Icon");
                 if (itemInfo != null)
                 {
-                    Transform iconTransform = itemInfo.Find("Icon");
-                    if (iconTransform != null)
+                    Image iconImage = itemInfo.GetComponent<Image>();
+                    if (iconImage != null)
                     {
-                        Image iconImage = iconTransform.GetComponent<Image>();
-                        if (iconImage != null)
-                        {
-                            iconImage.sprite = itemData.icon;
-                            iconImage.preserveAspect = true;
-                            iconImage.color = Color.white;
-                        }
+                        iconImage.sprite = itemData.icon;
+                        iconImage.preserveAspect = true;
+                        iconImage.color = Color.white;
                     }
                 }
 
@@ -123,16 +117,27 @@ public class GearUpFoodSelector : MonoBehaviour
 
         ApplyRarityColor(newFoodSlot.transform, itemData.rarity);
 
+        // Track this item so it doesn't show up again
+        selectedItems.Add(itemData);
+
+        // Subtract from stash
+        if (StashManager.Instance != null)
+        {
+            if (StashManager.Instance.stashItems.ContainsKey(itemData))
+            {
+                StashManager.Instance.stashItems[itemData] -= 1;
+                if (StashManager.Instance.stashItems[itemData] <= 0)
+                    StashManager.Instance.stashItems.Remove(itemData);
+            }
+        }
+
         CloseFoodSelection();
     }
 
     void CloseFoodSelection()
     {
-        if (itemSelectionPanel != null)
-        {
-            itemSelectionPanel.SetActive(false);
-            Debug.Log("Closed food selection.");
-        }
+        itemSelectionPanel?.SetActive(false);
+        Debug.Log("Closed food selection.");
     }
 
     private void ApplyRarityColor(Transform slot, ItemRarity rarity)
@@ -146,13 +151,10 @@ public class GearUpFoodSelector : MonoBehaviour
                 Color fillColor = GetColorForRarity(rarity);
                 fillImage.color = fillColor;
 
-                // Set background color slightly darker than fill
                 foreach (Image img in raritySlider.GetComponentsInChildren<Image>())
                 {
                     if (img != fillImage)
-                    {
                         img.color = DarkenColor(fillColor, 0.75f);
-                    }
                 }
             }
         }

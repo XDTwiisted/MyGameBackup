@@ -7,10 +7,11 @@ public class InventoryItemUI : MonoBehaviour
     [Header("UI References")]
     public Image iconImage;
     public TextMeshProUGUI nameText;
-    public TextMeshProUGUI effectText;
+    public TextMeshProUGUI typeText;
+    public TextMeshProUGUI damageText;
+    public TextMeshProUGUI ammoText; // ADDED
     public TextMeshProUGUI quantityText;
-    public TextMeshProUGUI durabilityText;
-    public Button useButton;
+    public TextMeshProUGUI effectText;
 
     [Header("Durability Visuals")]
     public Slider durabilitySlider;
@@ -20,7 +21,6 @@ public class InventoryItemUI : MonoBehaviour
     private InventoryItemData currentItem;
     private int currentQuantity;
     private int currentDurability;
-    private InventoryUseHandler useHandler;
 
     public void Setup(InventoryItemData item, int quantity, int durability = -1)
     {
@@ -34,23 +34,35 @@ public class InventoryItemUI : MonoBehaviour
         if (nameText != null)
             nameText.text = item.itemName;
 
+        if (typeText != null)
+            typeText.text = GetStatTypeDisplay(item);
+
+        if (damageText != null)
+        {
+            if (item.category == "Weapon" && item.damage > 0)
+                damageText.text = $"+{item.damage} Damage";
+            else
+                damageText.text = "";
+        }
+
+        if (ammoText != null)
+        {
+            if (item.category == "Weapon" && !string.IsNullOrEmpty(item.ammoType))
+                ammoText.text = item.ammoType;
+            else
+                ammoText.text = "";
+        }
+
+
         if (effectText != null)
-            effectText.text = item.description;
+            effectText.text = GetEffectDisplay(item);
 
         if (quantityText != null)
-            quantityText.text = quantity.ToString();
-
-        if (durabilityText != null)
         {
             if (item.isDurable)
-            {
-                durabilityText.gameObject.SetActive(true);
-                durabilityText.text = $"Durability: {currentDurability}/{item.maxDurability}";
-            }
+                quantityText.text = "";
             else
-            {
-                durabilityText.gameObject.SetActive(false);
-            }
+                quantityText.text = quantity.ToString();
         }
 
         if (item.isDurable && durabilitySlider != null)
@@ -70,23 +82,43 @@ public class InventoryItemUI : MonoBehaviour
             fillImage.color = rarityColor;
             backgroundImage.color = DarkenColor(rarityColor, 0.5f);
         }
+    }
 
-        useHandler = UnityEngine.Object.FindFirstObjectByType<InventoryUseHandler>();
+    private string GetStatTypeDisplay(InventoryItemData item)
+    {
+        string result = "";
 
-        if (useButton != null)
+        if (item.restoreHunger > 0)
+            result += $"+{item.restoreHunger} Hunger";
+
+        if (item.restoreThirst > 0)
+            result += (result.Length > 0 ? " | " : "") + $"+{item.restoreThirst} Thirst";
+
+        if (item.restoreHealth > 0)
+            result += (result.Length > 0 ? " | " : "") + $"+{item.restoreHealth} Health";
+
+        if (string.IsNullOrEmpty(result))
+            result = string.IsNullOrEmpty(item.typeLabel) ? "" : item.typeLabel;
+
+        return result;
+    }
+
+    private string GetEffectDisplay(InventoryItemData item)
+    {
+        string effect = "";
+
+        if (!string.IsNullOrEmpty(item.positiveEffect))
+            effect += item.positiveEffect;
+
+        if (!string.IsNullOrEmpty(item.negativeEffect))
         {
-            useButton.onClick.RemoveAllListeners();
+            if (!string.IsNullOrEmpty(effect))
+                effect += " | ";
 
-            if (item.category == "Misc")
-            {
-                useButton.gameObject.SetActive(false);
-            }
-            else
-            {
-                useButton.gameObject.SetActive(true);
-                useButton.onClick.AddListener(OnUseButtonClicked);
-            }
+            effect += item.negativeEffect;
         }
+
+        return effect;
     }
 
     public void SetItem(InventoryItemData item, int quantity)
@@ -103,18 +135,6 @@ public class InventoryItemUI : MonoBehaviour
         }
 
         Setup(instance.itemData, instance.quantity, instance.currentDurability);
-    }
-
-    private void OnUseButtonClicked()
-    {
-        if (useHandler != null && currentItem != null)
-        {
-            useHandler.UseItem(currentItem);
-        }
-        else
-        {
-            Debug.LogWarning("InventoryItemUI: UseHandler or currentItem is null!");
-        }
     }
 
     public void UpdateQuantity(int newQuantity)
