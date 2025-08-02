@@ -9,7 +9,7 @@ public class InventoryItemUI : MonoBehaviour
     public TextMeshProUGUI nameText;
     public TextMeshProUGUI typeText;
     public TextMeshProUGUI damageText;
-    public TextMeshProUGUI ammoText; // ADDED
+    public TextMeshProUGUI ammoText;
     public TextMeshProUGUI quantityText;
     public TextMeshProUGUI effectText;
 
@@ -18,16 +18,65 @@ public class InventoryItemUI : MonoBehaviour
     public Image fillImage;
     [SerializeField] private Image backgroundImage;
 
+    [Header("Drop UI")]
+    public Button dropButton;
+    public GameObject dropConfirmationPanel;
+    public Button yesDropButton;
+    public Button noDropButton;
+
     private InventoryItemData currentItem;
     private int currentQuantity;
     private int currentDurability;
+    private ItemInstance currentInstance;
+
+    private void Awake()
+    {
+        if (dropButton != null)
+            dropButton.onClick.AddListener(ShowDropConfirmation);
+
+        if (yesDropButton != null)
+            yesDropButton.onClick.AddListener(DropItem);
+
+        if (noDropButton != null)
+            noDropButton.onClick.AddListener(HideDropConfirmation);
+
+        if (dropConfirmationPanel != null)
+            dropConfirmationPanel.SetActive(false);
+    }
 
     public void Setup(InventoryItemData item, int quantity, int durability = -1)
     {
         currentItem = item;
         currentQuantity = quantity;
         currentDurability = durability;
+        currentInstance = null;
 
+        ApplyCommonUI(item, quantity, durability);
+    }
+
+    public void SetItem(InventoryItemData item, int quantity)
+    {
+        Setup(item, quantity);
+    }
+
+    public void SetItemInstance(ItemInstance instance)
+    {
+        if (instance == null || instance.itemData == null)
+        {
+            Debug.LogWarning("SetItemInstance: instance or itemData is null.");
+            return;
+        }
+
+        currentInstance = instance;
+        currentItem = instance.itemData;
+        currentQuantity = instance.quantity;
+        currentDurability = instance.currentDurability;
+
+        ApplyCommonUI(currentItem, currentQuantity, currentDurability);
+    }
+
+    private void ApplyCommonUI(InventoryItemData item, int quantity, int durability)
+    {
         if (iconImage != null)
             iconImage.sprite = item.icon;
 
@@ -38,42 +87,29 @@ public class InventoryItemUI : MonoBehaviour
             typeText.text = GetStatTypeDisplay(item);
 
         if (damageText != null)
-        {
-            if (item.category == "Weapon" && item.damage > 0)
-                damageText.text = $"+{item.damage} Damage";
-            else
-                damageText.text = "";
-        }
+            damageText.text = (item.category == "Weapon" && item.damage > 0) ? $"+{item.damage} Damage" : "";
 
         if (ammoText != null)
-        {
-            if (item.category == "Weapon" && !string.IsNullOrEmpty(item.ammoType))
-                ammoText.text = item.ammoType;
-            else
-                ammoText.text = "";
-        }
-
+            ammoText.text = (item.category == "Weapon" && !string.IsNullOrEmpty(item.ammoType)) ? item.ammoType : "";
 
         if (effectText != null)
             effectText.text = GetEffectDisplay(item);
 
         if (quantityText != null)
+            quantityText.text = item.isDurable ? "" : quantity.ToString();
+
+        if (durabilitySlider != null)
         {
             if (item.isDurable)
-                quantityText.text = "";
+            {
+                durabilitySlider.gameObject.SetActive(true);
+                durabilitySlider.maxValue = item.maxDurability;
+                durabilitySlider.value = durability;
+            }
             else
-                quantityText.text = quantity.ToString();
-        }
-
-        if (item.isDurable && durabilitySlider != null)
-        {
-            durabilitySlider.gameObject.SetActive(true);
-            durabilitySlider.maxValue = item.maxDurability;
-            durabilitySlider.value = currentDurability;
-        }
-        else if (durabilitySlider != null)
-        {
-            durabilitySlider.gameObject.SetActive(false);
+            {
+                durabilitySlider.gameObject.SetActive(false);
+            }
         }
 
         if (fillImage != null && backgroundImage != null)
@@ -82,6 +118,8 @@ public class InventoryItemUI : MonoBehaviour
             fillImage.color = rarityColor;
             backgroundImage.color = DarkenColor(rarityColor, 0.5f);
         }
+
+        HideDropConfirmation();
     }
 
     private string GetStatTypeDisplay(InventoryItemData item)
@@ -121,21 +159,52 @@ public class InventoryItemUI : MonoBehaviour
         return effect;
     }
 
-    public void SetItem(InventoryItemData item, int quantity)
+    private void ShowDropConfirmation()
     {
-        Setup(item, quantity);
+        if (dropConfirmationPanel != null)
+            dropConfirmationPanel.SetActive(true);
     }
 
-    public void SetItemInstance(ItemInstance instance)
+    private void HideDropConfirmation()
     {
-        if (instance == null || instance.itemData == null)
+        if (dropConfirmationPanel != null)
+            dropConfirmationPanel.SetActive(false);
+    }
+
+    private void DropItem()
+    {
+        bool dropped = false;
+
+        if (currentItem != null)
         {
-            Debug.LogWarning("SetItemInstance: instance or itemData is null.");
-            return;
+            if (currentItem.isDurable && currentInstance != null)
+            {
+                if (InventoryManager.Instance != null)
+                    dropped = InventoryManager.Instance.RemoveDurableItem(currentInstance);
+
+                if (!dropped && StashManager.Instance != null)
+                    dropped = StashManager.Instance.RemoveDurableItem(currentInstance);
+            }
+            else
+            {
+                if (InventoryManager.Instance != null)
+                    dropped = InventoryManager.Instance.RemoveStackableItem(currentItem, 1); // Drop 1
+
+                if (!dropped && StashManager.Instance != null)
+                    dropped = StashManager.Instance.RemoveStackableItem(currentItem, 1); // Drop 1
+            }
+
+            if (dropped)
+                Debug.Log($"Dropped item: {currentItem.itemName}");
+            else
+                Debug.LogWarning("Drop failed: item not found in inventory or stash");
         }
 
-        Setup(instance.itemData, instance.quantity, instance.currentDurability);
+        InventoryUIManager.Instance?.RefreshInventoryDisplay();
+        StashManagerUI.Instance?.RefreshStashUI();
+        HideDropConfirmation();
     }
+
 
     public void UpdateQuantity(int newQuantity)
     {

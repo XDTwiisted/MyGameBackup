@@ -23,10 +23,7 @@ public class InventoryManager : MonoBehaviour
     [Header("UI Parent for Item Slots")]
     public Transform contentParent;
 
-    // Stackable (non-durable) inventory
     public List<InventoryEntry> inventory = new List<InventoryEntry>();
-
-    // Unique (durable) runtime-only inventory
     public List<ItemInstance> runtimeInventory = new List<ItemInstance>();
 
     private string currentCategory = "All";
@@ -46,16 +43,6 @@ public class InventoryManager : MonoBehaviour
         inventory = SaveManager.LoadInventory();
         runtimeInventory = SaveManager.LoadRuntimeInventory();
 
-        foreach (var entry in inventory)
-        {
-            Debug.Log("Loaded stackable: " + entry.itemData.itemName + " x" + entry.quantity);
-        }
-
-        foreach (var instance in runtimeInventory)
-        {
-            Debug.Log("Loaded durable: " + instance.itemData.itemName + " (Durability: " + instance.currentDurability + ")");
-        }
-
         RefreshUI();
     }
 
@@ -66,40 +53,25 @@ public class InventoryManager : MonoBehaviour
 
     private void OnApplicationPause(bool paused)
     {
-        if (paused)
-        {
-            SaveInventoryNow();
-        }
+        if (paused) SaveInventoryNow();
     }
 
     public void AddItem(InventoryItemData item, int amount)
     {
-        if (item == null || amount <= 0)
-        {
-            Debug.LogWarning("Invalid item or amount in AddItem");
-            return;
-        }
+        if (item == null || amount <= 0) return;
 
         if (item.isDurable)
         {
             for (int i = 0; i < amount; i++)
-            {
-                ItemInstance instance = new ItemInstance(item, 1, item.maxDurability);
-                runtimeInventory.Add(instance);
-                Debug.Log($"Added durable item: {item.itemName} (Durability: {instance.currentDurability})");
-            }
+                runtimeInventory.Add(new ItemInstance(item, 1, item.maxDurability));
         }
         else
         {
             InventoryEntry existing = inventory.Find(i => i.itemData.itemID == item.itemID);
             if (existing != null)
-            {
                 existing.quantity += amount;
-            }
             else
-            {
                 inventory.Add(new InventoryEntry(item, amount));
-            }
         }
 
         SaveInventoryNow();
@@ -108,23 +80,15 @@ public class InventoryManager : MonoBehaviour
 
     public void AddItemInstance(ItemInstance newItem)
     {
-        if (newItem == null || newItem.itemData == null)
-        {
-            Debug.LogWarning("Null ItemInstance passed to AddItemInstance.");
-            return;
-        }
+        if (newItem == null || newItem.itemData == null) return;
 
         if (!newItem.itemData.isDurable)
         {
             InventoryEntry existing = inventory.Find(i => i.itemData.itemID == newItem.itemData.itemID);
             if (existing != null)
-            {
                 existing.quantity += newItem.quantity;
-            }
             else
-            {
                 inventory.Add(new InventoryEntry(newItem.itemData, newItem.quantity));
-            }
         }
         else
         {
@@ -133,22 +97,16 @@ public class InventoryManager : MonoBehaviour
 
         SaveInventoryNow();
         RefreshUI();
-        Debug.Log($"Added {newItem.quantity}x {newItem.itemData.itemName} (Durability: {newItem.currentDurability})");
     }
 
     public void UseItem(InventoryItemData item)
     {
-        if (item == null || item.isDurable)
-        {
-            Debug.LogWarning("UseItem called with null or durable item.");
-            return;
-        }
+        if (item == null || item.isDurable) return;
 
         InventoryEntry entry = inventory.Find(i => i.itemData.itemID == item.itemID);
         if (entry != null)
         {
             entry.quantity--;
-
             if (entry.quantity <= 0)
                 inventory.Remove(entry);
 
@@ -161,13 +119,9 @@ public class InventoryManager : MonoBehaviour
     {
         inventory.Clear();
         runtimeInventory.Clear();
-
         PlayerPrefs.DeleteKey("inventory");
         PlayerPrefs.DeleteKey("runtimeInventory");
         PlayerPrefs.Save();
-
-        Debug.Log("Inventory cleared.");
-
         RefreshUI();
     }
 
@@ -191,28 +145,52 @@ public class InventoryManager : MonoBehaviour
 
     public List<InventoryEntry> GetInventory(string category = "All")
     {
-        if (category == "All") return inventory;
-        return inventory.FindAll(entry => entry.itemData.category == category);
+        return category == "All" ? inventory : inventory.FindAll(i => i.itemData.category == category);
     }
 
     public List<ItemInstance> GetRuntimeInventory(string category = "All")
     {
-        if (category == "All") return runtimeInventory;
-        return runtimeInventory.FindAll(entry => entry.itemData.category == category);
+        return category == "All" ? runtimeInventory : runtimeInventory.FindAll(i => i.itemData.category == category);
     }
 
     private void RefreshUI()
     {
-        if (InventoryUIManager.Instance != null)
-            InventoryUIManager.Instance.RefreshInventoryDisplay();
-
-        if (StashManagerUI.Instance != null)
-            StashManagerUI.Instance.RefreshStashUI();
+        InventoryUIManager.Instance?.RefreshInventoryDisplay();
+        StashManagerUI.Instance?.RefreshStashUI();
     }
 
     private void SaveInventoryNow()
     {
         SaveManager.SaveInventory(inventory);
         SaveManager.SaveRuntimeInventory(runtimeInventory);
+    }
+
+    //  FIXED: Return bool for success/failure
+    public bool RemoveStackableItem(InventoryItemData item, int quantityToRemove)
+    {
+        InventoryEntry entry = inventory.Find(i => i.itemData.itemID == item.itemID);
+        if (entry != null)
+        {
+            entry.quantity -= quantityToRemove;
+            if (entry.quantity <= 0)
+                inventory.Remove(entry);
+
+            SaveInventoryNow();
+            RefreshUI();
+            return true;
+        }
+        return false;
+    }
+
+    public bool RemoveDurableItem(ItemInstance instance)
+    {
+        if (runtimeInventory.Contains(instance))
+        {
+            runtimeInventory.Remove(instance);
+            SaveInventoryNow();
+            RefreshUI();
+            return true;
+        }
+        return false;
     }
 }

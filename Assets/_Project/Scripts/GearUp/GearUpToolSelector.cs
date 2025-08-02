@@ -79,7 +79,7 @@ public class GearUpToolSelector : MonoBehaviour
                     }
                 }
 
-                ApplyRarityColorToSlider(slotGO.transform, item.itemData.rarity);
+                ApplyRarityVisualsToSlider(slotGO.transform, item);
 
                 Button button = slotGO.GetComponent<Button>();
                 if (button != null)
@@ -125,9 +125,7 @@ public class GearUpToolSelector : MonoBehaviour
             }
         }
 
-        //  Track this durable item for later use during exploration
         GearUpSelectionManager.Instance?.AddDurable(selectedInstance);
-
         CloseToolSelection();
     }
 
@@ -140,38 +138,42 @@ public class GearUpToolSelector : MonoBehaviour
         }
     }
 
-    private void ApplyRarityColorToSlider(Transform slot, ItemRarity rarity)
+    private void ApplyRarityVisualsToSlider(Transform slot, ItemInstance item)
     {
+        if (item == null || item.itemData == null) return;
+
         Slider durabilitySlider = slot.GetComponentInChildren<Slider>();
-        if (durabilitySlider != null)
+        if (durabilitySlider == null) return;
+
+        durabilitySlider.maxValue = item.itemData.maxDurability;
+        durabilitySlider.value = item.currentDurability;
+
+        Color fillColor = RarityColors.GetColor(item.itemData.rarity);
+        Color backgroundColor = DarkenColor(fillColor, 0.5f);
+
+        Transform fillTransform = durabilitySlider.transform.Find("Fill Area/Fill");
+        if (fillTransform != null)
         {
-            Color fillColor = RarityColors.GetColor(rarity);
-            Color backgroundColor = DarkenColor(fillColor, 0.75f);
-
-            Transform fillTransform = durabilitySlider.transform.Find("Fill Area/Fill");
-            if (fillTransform != null)
+            Image fillImage = fillTransform.GetComponent<Image>();
+            if (fillImage != null)
             {
-                Image fillImage = fillTransform.GetComponent<Image>();
-                if (fillImage != null)
-                {
-                    fillImage.color = fillColor;
-                }
+                fillImage.color = fillColor;
             }
+        }
 
-            Transform bgTransform = durabilitySlider.transform.Find("Background");
-            if (bgTransform != null)
+        Transform bgTransform = durabilitySlider.transform.Find("Background");
+        if (bgTransform != null)
+        {
+            Image bgImage = bgTransform.GetComponent<Image>();
+            if (bgImage != null)
             {
-                Image background = bgTransform.GetComponent<Image>();
-                if (background != null)
-                {
-                    background.color = backgroundColor;
-                }
+                bgImage.color = backgroundColor;
             }
         }
     }
 
-    private Color DarkenColor(Color color, float amount = 0.75f)
+    private Color DarkenColor(Color color, float multiplier)
     {
-        return new Color(color.r * amount, color.g * amount, color.b * amount, color.a);
+        return new Color(color.r * multiplier, color.g * multiplier, color.b * multiplier, color.a);
     }
 }
