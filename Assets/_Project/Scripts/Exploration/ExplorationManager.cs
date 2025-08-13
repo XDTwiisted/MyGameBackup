@@ -4,50 +4,103 @@ using System.Collections.Generic;
 
 public class ExplorationManager : MonoBehaviour
 {
+    public static ExplorationManager Instance;
+
+    [Header("Loot")]
     public LootTable lootTable;
     public float lootTickInterval = 10f;
+
+    [Header("Dialogue")]
+    public ExplorationDialogueManager explorationDialogueManager;
 
     private float lootTimer = 0f;
     private bool isExploring = false;
 
     private const string LastExplorationStartTimeKey = "LastExplorationStartTime";
+    private const string WasExploringKey = "WasExploring";
 
-    public ExplorationDialogueManager explorationDialogueManager;
+    public bool IsExploring => isExploring;
+
+    private void Awake()
+    {
+        if (Instance == null) Instance = this;
+        else { Destroy(gameObject); return; }
+
+        if (explorationDialogueManager == null)
+            explorationDialogueManager = UnityEngine.Object.FindFirstObjectByType<ExplorationDialogueManager>(FindObjectsInactive.Include);
+
+        if (lootTable == null)
+            lootTable = UnityEngine.Object.FindFirstObjectByType<LootTable>(FindObjectsInactive.Include);
+    }
+
+
+    private void Start()
+    {
+        RestoreState();
+    }
+
+    private void Update()
+    {
+        AdvanceExplorationTime(Time.deltaTime);
+    }
 
     public void StartExploring()
     {
+        if (isExploring)
+        {
+            Debug.Log("[ExplorationManager] StartExploring called but already exploring.");
+            return;
+        }
+
+        if (lootTable == null)
+            Debug.LogWarning("[ExplorationManager] No LootTable assigned. Loot will not generate.");
+
         isExploring = true;
         lootTimer = 0f;
-        Debug.Log("Exploration started.");
-
-        HandleOfflineLoot();
+        Debug.Log("[ExplorationManager] Exploration started.");
 
         PlayerPrefs.SetString(LastExplorationStartTimeKey, DateTime.UtcNow.ToBinary().ToString());
+        PlayerPrefs.SetInt(WasExploringKey, 1);
         PlayerPrefs.Save();
 
-        explorationDialogueManager?.ResetDialogue();
-        explorationDialogueManager?.gameObject.SetActive(true); //  Show it now
+        if (explorationDialogueManager != null)
+            explorationDialogueManager.StartExploration();
+        else
+            Debug.LogWarning("[ExplorationManager] No ExplorationDialogueManager assigned.");
+
+        HandleOfflineLoot();
     }
 
     public void StopExploring()
     {
+        if (!isExploring)
+        {
+            Debug.Log("[ExplorationManager] StopExploring called but not exploring.");
+            return;
+        }
+
         isExploring = false;
-        Debug.Log("Exploration stopped.");
+        Debug.Log("[ExplorationManager] Exploration stopped.");
 
         PlayerPrefs.DeleteKey(LastExplorationStartTimeKey);
+        PlayerPrefs.SetInt(WasExploringKey, 0);
         PlayerPrefs.Save();
 
-        explorationDialogueManager?.ClearFoundItemsQueue();
-        explorationDialogueManager?.gameObject.SetActive(false); //  Hide it now
+        if (explorationDialogueManager != null)
+            explorationDialogueManager.StopExploration();
     }
 
+    public void ReturnToBunker()
+    {
+        StopExploring();
+        Debug.Log("[ExplorationManager] Returned to bunker: exploration stopped.");
+    }
 
     public void AdvanceExplorationTime(float deltaTime)
     {
         if (!isExploring) return;
 
         lootTimer += deltaTime;
-
         if (lootTimer >= lootTickInterval)
         {
             lootTimer = 0f;
@@ -57,40 +110,19 @@ public class ExplorationManager : MonoBehaviour
 
     private void GenerateLoot()
     {
-        if (lootTable == null)
+        if (lootTable == null) return;
+
+        var drops = lootTable.GetLoot();
+        if (drops == null || drops.Count == 0) return;
+
+        foreach (var item in drops)
         {
-            Debug.LogError("LootTable is not assigned in ExplorationManager!");
-            return;
-        }
+            if (item.itemData.isDurable)
+                InventoryManager.Instance?.AddItemInstance(item);
+            else
+                InventoryManager.Instance?.AddItem(item.itemData, item.quantity);
 
-        List<ItemInstance> lootFound = lootTable.GetLoot();
-
-        if (lootFound == null || lootFound.Count == 0)
-        {
-            Debug.Log("No loot dropped this roll.");
-            return;
-        }
-
-        Debug.Log($"Loot found count: {lootFound.Count}");
-
-        foreach (var item in lootFound)
-        {
-            if (item == null || item.itemData == null)
-            {
-                Debug.LogWarning("ItemInstance or itemData is null.");
-                continue;
-            }
-
-            InventoryManager.Instance.AddItemInstance(item);
-            Debug.Log($"Found {item.quantity}x {item.itemData.itemName} while exploring! (Durability: {item.currentDurability})");
-
-            if (explorationDialogueManager != null)
-            {
-                for (int i = 0; i < item.quantity; i++)
-                {
-                    explorationDialogueManager.FoundItem(item.itemData);
-                }
-            }
+            explorationDialogueManager?.FoundItem(item.itemData);
         }
     }
 
@@ -98,26 +130,30 @@ public class ExplorationManager : MonoBehaviour
     {
         if (!PlayerPrefs.HasKey(LastExplorationStartTimeKey)) return;
 
-        long binaryTime = Convert.ToInt64(PlayerPrefs.GetString(LastExplorationStartTimeKey));
-        DateTime lastStartTime = DateTime.FromBinary(binaryTime);
-        TimeSpan offlineDuration = DateTime.UtcNow - lastStartTime;
+        string savedTime = PlayerPrefs.GetString(LastExplorationStartTimeKey);
+        if (!long.TryParse(savedTime, out long binaryTime)) return;
 
-        if (offlineDuration.TotalSeconds <= 0) return;
+        DateTime lastTime = DateTime.FromBinary(binaryTime);
+        TimeSpan elapsed = DateTime.UtcNow - lastTime;
 
-        int offlineTicks = Mathf.FloorToInt((float)(offlineDuration.TotalSeconds / lootTickInterval));
-        if (offlineTicks <= 0) return;
-
-        Debug.Log($"Generating {offlineTicks} offline loot ticks based on {offlineDuration.TotalSeconds:F1} seconds offline.");
-
-        for (int i = 0; i < offlineTicks; i++)
-        {
+        int ticks = Mathf.FloorToInt((float)elapsed.TotalSeconds / lootTickInterval);
+        for (int i = 0; i < ticks; i++)
             GenerateLoot();
-        }
+
+        lootTimer = (float)elapsed.TotalSeconds % lootTickInterval;
     }
 
-    public void ReturnToBunker()
+    private void RestoreState()
     {
-        StopExploring();
-        Debug.Log("Returned to bunker and exploration has been stopped.");
+        if (PlayerPrefs.GetInt(WasExploringKey, 0) == 1)
+        {
+            isExploring = true;
+            Debug.Log("[ExplorationManager] Restoring exploration from saved state.");
+
+            HandleOfflineLoot();
+
+            if (explorationDialogueManager != null)
+                explorationDialogueManager.ResetDialogue();
+        }
     }
 }

@@ -124,6 +124,13 @@ public class InventoryItemUI : MonoBehaviour
 
     private string GetStatTypeDisplay(InventoryItemData item)
     {
+        // Always show both Hunger and Thirst for food/thirst items, even when zero
+        if (item.category == "Food" || item.category == "Thirst" || item.category == "Drink")
+        {
+            return $"+{item.restoreHunger} Hunger | +{item.restoreThirst} Thirst";
+        }
+
+        // Default behavior for other categories
         string result = "";
 
         if (item.restoreHunger > 0)
@@ -152,7 +159,6 @@ public class InventoryItemUI : MonoBehaviour
         {
             if (!string.IsNullOrEmpty(effect))
                 effect += " | ";
-
             effect += item.negativeEffect;
         }
 
@@ -188,10 +194,10 @@ public class InventoryItemUI : MonoBehaviour
             else
             {
                 if (InventoryManager.Instance != null)
-                    dropped = InventoryManager.Instance.RemoveStackableItem(currentItem, 1); // Drop 1
+                    dropped = InventoryManager.Instance.RemoveStackableItem(currentItem, 1);
 
                 if (!dropped && StashManager.Instance != null)
-                    dropped = StashManager.Instance.RemoveStackableItem(currentItem, 1); // Drop 1
+                    dropped = StashManager.Instance.RemoveStackableItem(currentItem, 1);
             }
 
             if (dropped)
@@ -204,7 +210,6 @@ public class InventoryItemUI : MonoBehaviour
         StashManagerUI.Instance?.RefreshStashUI();
         HideDropConfirmation();
     }
-
 
     public void UpdateQuantity(int newQuantity)
     {

@@ -1,70 +1,73 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class InventoryCategoryButton : MonoBehaviour
 {
-    public string categoryName;        // Set in Inspector, e.g. "Food", "Weapon", etc.
-    public Button button;              // Optional: will auto-assign if null
-    public Color activeColor = Color.green;
-    public Color inactiveColor = Color.white;
+    [Header("Category")]
+    public string categoryName;               // "Food", "Weapon", etc.
+    public Button button;                     // Auto-assign if null
 
-    private Image buttonImage;
+    [Header("Colors")]
+    public Color activeBgColor = Color.white;
+    public Color inactiveBgColor = new Color(1f, 1f, 1f, 0.15f);
+
+    [Header("Optional Text Colors (if you have a TMP child)")]
+    public Color activeTextColor = Color.black;
+    public Color inactiveTextColor = new Color(1f, 1f, 1f, 0.7f);
+
+    private Image bgImage;                    // button background image
+    private TextMeshProUGUI labelTMP;         // optional child label
 
     private void Awake()
     {
-        // Auto-assign the Button component if not set
-        if (button == null)
-            button = GetComponent<Button>();
-
+        if (button == null) button = GetComponent<Button>();
         if (button == null)
         {
-            Debug.LogError("InventoryCategoryButton: No Button component found!");
+            Debug.LogError("InventoryCategoryButton: Button missing.");
             return;
         }
 
-        // Get the Image component from the button (background)
-        buttonImage = button.GetComponent<Image>();
+        bgImage = button.GetComponent<Image>();
+        labelTMP = GetComponentInChildren<TextMeshProUGUI>(true);
 
-        if (buttonImage == null)
-            Debug.LogWarning("InventoryCategoryButton: Button has no Image component!");
-
-        // Set up the button click listener
         button.onClick.AddListener(OnClick);
 
-        // Set initial state as inactive
+        // Default to inactive; group will activate the chosen one
         SetInactive();
+    }
+
+    private void OnEnable()
+    {
+        // When panel re-opens, group will call SetActiveCategory again; until then keep visuals sane
+        if (bgImage != null) bgImage.color = inactiveBgColor;
+        if (labelTMP != null) labelTMP.color = inactiveTextColor;
     }
 
     private void OnClick()
     {
-        if (InventoryManager.Instance != null)
+        var group = GetComponentInParent<InventoryCategoryGroup>();
+        if (group != null)
         {
-            InventoryManager.Instance.SetCategory(categoryName);
+            group.SetActiveCategory(categoryName);
         }
         else
         {
-            Debug.LogWarning("InventoryCategoryButton: InventoryManager instance not found.");
-        }
-
-        if (InventoryCategoryGroup.Instance != null)
-        {
-            InventoryCategoryGroup.Instance.SetActiveCategory(categoryName);
-        }
-        else
-        {
-            Debug.LogWarning("InventoryCategoryButton: InventoryCategoryGroup instance not found.");
+            Debug.LogWarning("InventoryCategoryButton: No InventoryCategoryGroup found in parents.");
         }
     }
 
+    // Called by group
     public void SetActive()
     {
-        if (buttonImage != null)
-            buttonImage.color = activeColor;
+        if (bgImage != null) bgImage.color = activeBgColor;
+        if (labelTMP != null) labelTMP.color = activeTextColor;
     }
 
+    // Called by group
     public void SetInactive()
     {
-        if (buttonImage != null)
-            buttonImage.color = inactiveColor;
+        if (bgImage != null) bgImage.color = inactiveBgColor;
+        if (labelTMP != null) labelTMP.color = inactiveTextColor;
     }
 }

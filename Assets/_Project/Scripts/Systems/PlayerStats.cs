@@ -20,55 +20,102 @@ public class PlayerStats : MonoBehaviour
 
     public static PlayerStats Instance;
 
+    private const string SAVED_HEALTH_KEY = "SavedHealth";
+    private const string SAVED_HUNGER_KEY = "SavedHunger";
+    private const string SAVED_THIRST_KEY = "SavedThirst";
+    private const string LAST_CLOSED_UTC_KEY = "LastClosedUtcBinary";
+    private const string LEGACY_LAST_CLOSED_KEY = "LastClosedTime";
+
+    private static class TimeUtil
+    {
+        public static DateTime UtcNow() { return DateTime.UtcNow; }
+
+        public static void SaveUtcBinary(string key, DateTime utc)
+        {
+            PlayerPrefs.SetString(key, utc.ToBinary().ToString());
+        }
+
+        public static bool TryLoadUtcBinary(string key, out DateTime utc)
+        {
+            utc = default;
+            var s = PlayerPrefs.GetString(key, string.Empty);
+            if (string.IsNullOrEmpty(s)) return false;
+            if (!long.TryParse(s, out var bin)) return false;
+            utc = DateTime.FromBinary(bin);
+            return true;
+        }
+    }
+
+    void Awake()
+    {
+        if (Instance == null) Instance = this;
+        else { Destroy(gameObject); return; }
+    }
 
     void Start()
     {
-        // Load saved stats if they exist
-        if (PlayerPrefs.HasKey("SavedHealth")) health = PlayerPrefs.GetFloat("SavedHealth");
-        if (PlayerPrefs.HasKey("SavedHunger")) hunger = PlayerPrefs.GetFloat("SavedHunger");
-        if (PlayerPrefs.HasKey("SavedThirst")) thirst = PlayerPrefs.GetFloat("SavedThirst");
+        // Load saved stats if present
+        if (PlayerPrefs.HasKey(SAVED_HEALTH_KEY)) health = PlayerPrefs.GetFloat(SAVED_HEALTH_KEY);
+        if (PlayerPrefs.HasKey(SAVED_HUNGER_KEY)) hunger = PlayerPrefs.GetFloat(SAVED_HUNGER_KEY);
+        if (PlayerPrefs.HasKey(SAVED_THIRST_KEY)) thirst = PlayerPrefs.GetFloat(SAVED_THIRST_KEY);
 
-        // Apply decay based on time away
-        if (PlayerPrefs.HasKey("LastClosedTime"))
+        // Apply offline decay using UTC
+        DateTime lastClosedUtc;
+        if (!TimeUtil.TryLoadUtcBinary(LAST_CLOSED_UTC_KEY, out lastClosedUtc))
         {
-            string savedTimeStr = PlayerPrefs.GetString("LastClosedTime");
-            DateTime savedTime = DateTime.Parse(savedTimeStr);
-            TimeSpan timeAway = DateTime.Now - savedTime;
-            float secondsAway = (float)timeAway.TotalSeconds;
+            // Migrate from legacy local time string if it exists
+            if (PlayerPrefs.HasKey(LEGACY_LAST_CLOSED_KEY))
+            {
+                var legacy = PlayerPrefs.GetString(LEGACY_LAST_CLOSED_KEY, string.Empty);
+                if (!string.IsNullOrEmpty(legacy))
+                {
+                    try
+                    {
+                        var parsedLocal = DateTime.Parse(legacy);
+                        lastClosedUtc = parsedLocal.ToUniversalTime();
+                        TimeUtil.SaveUtcBinary(LAST_CLOSED_UTC_KEY, lastClosedUtc);
+                        PlayerPrefs.Save();
+                    }
+                    catch { }
+                }
+            }
+        }
 
-            // Calculate losses
-            float hungerLoss = hungerDecayRate * secondsAway;
-            float thirstLoss = thirstDecayRate * secondsAway;
+        if (lastClosedUtc != default)
+        {
+            float secondsAway = (float)(TimeUtil.UtcNow() - lastClosedUtc).TotalSeconds;
+            if (secondsAway > 0f)
+            {
+                float hungerLoss = hungerDecayRate * secondsAway;
+                float thirstLoss = thirstDecayRate * secondsAway;
 
-            float estimatedHunger = hunger - hungerLoss;
-            float estimatedThirst = thirst - thirstLoss;
+                float estHunger = hunger - hungerLoss;
+                float estThirst = thirst - thirstLoss;
 
-            // Clamp hunger and thirst
-            hunger = Mathf.Clamp(estimatedHunger, 0f, maxHunger);
-            thirst = Mathf.Clamp(estimatedThirst, 0f, maxThirst);
+                hunger = Mathf.Clamp(estHunger, 0f, maxHunger);
+                thirst = Mathf.Clamp(estThirst, 0f, maxThirst);
 
-            // Calculate how long hunger or thirst were at zero or below
-            float hungerZeroDuration = estimatedHunger < 0 ? Mathf.Abs(estimatedHunger) / hungerDecayRate : 0f;
-            float thirstZeroDuration = estimatedThirst < 0 ? Mathf.Abs(estimatedThirst) / thirstDecayRate : 0f;
+                float hungerZeroDur = estHunger < 0f ? Mathf.Abs(estHunger) / Mathf.Max(0.0001f, hungerDecayRate) : 0f;
+                float thirstZeroDur = estThirst < 0f ? Mathf.Abs(estThirst) / Mathf.Max(0.0001f, thirstDecayRate) : 0f;
+                float zeroDur = Mathf.Max(hungerZeroDur, thirstZeroDur);
 
-            float maxZeroDuration = Mathf.Max(hungerZeroDuration, thirstZeroDuration);
-
-            // Apply health decay for that duration
-            float healthLoss = healthDecayRate * maxZeroDuration;
-            health = Mathf.Clamp(health - healthLoss, 0f, maxHealth);
+                if (zeroDur > 0f)
+                {
+                    float healthLoss = healthDecayRate * zeroDur;
+                    health = Mathf.Clamp(health - healthLoss, 0f, maxHealth);
+                }
+            }
         }
     }
 
     void Update()
     {
-        // Decay hunger and thirst in real-time
         hunger -= hungerDecayRate * Time.deltaTime;
         thirst -= thirstDecayRate * Time.deltaTime;
 
         hunger = Mathf.Clamp(hunger, 0f, maxHunger);
         thirst = Mathf.Clamp(thirst, 0f, maxThirst);
 
-        // Health decays only if hunger or thirst is zero
         if (hunger <= 0f || thirst <= 0f)
         {
             health -= healthDecayRate * Time.deltaTime;
@@ -79,39 +126,14 @@ public class PlayerStats : MonoBehaviour
 
     public void AdjustHunger(int amount)
     {
-        hunger = Mathf.Clamp(hunger + amount, 0, 100);
-        // update UI here
+        hunger = Mathf.Clamp(hunger + amount, 0f, maxHunger);
     }
 
     public void AdjustThirst(int amount)
     {
-        thirst = Mathf.Clamp(thirst + amount, 0, 100);
-        // update UI here
+        thirst = Mathf.Clamp(thirst + amount, 0f, maxThirst);
     }
 
-
-    void OnApplicationPause(bool paused)
-    {
-        if (paused)
-        {
-            SaveStats();
-        }
-    }
-
-    void OnApplicationQuit()
-    {
-        SaveStats();
-    }
-
-    // Call this whenever stats are updated externally (like eating food)
-    public void SaveStats()
-    {
-        PlayerPrefs.SetFloat("SavedHealth", health);
-        PlayerPrefs.SetFloat("SavedHunger", hunger);
-        PlayerPrefs.SetFloat("SavedThirst", thirst);
-        PlayerPrefs.SetString("LastClosedTime", DateTime.Now.ToString());
-        PlayerPrefs.Save();
-    }
     public void RestoreHunger(float amount)
     {
         hunger = Mathf.Clamp(hunger + amount, 0f, maxHunger);
@@ -123,9 +145,27 @@ public class PlayerStats : MonoBehaviour
         thirst = Mathf.Clamp(thirst + amount, 0f, maxThirst);
         SaveStats();
     }
-    void Awake()
+
+    void OnApplicationPause(bool paused)
     {
-        if (Instance == null) Instance = this;
-        else Destroy(gameObject);
+        if (paused) SaveStats();
+    }
+
+    void OnApplicationQuit()
+    {
+        SaveStats();
+    }
+
+    public void SaveStats()
+    {
+        PlayerPrefs.SetFloat(SAVED_HEALTH_KEY, health);
+        PlayerPrefs.SetFloat(SAVED_HUNGER_KEY, hunger);
+        PlayerPrefs.SetFloat(SAVED_THIRST_KEY, thirst);
+
+        TimeUtil.SaveUtcBinary(LAST_CLOSED_UTC_KEY, TimeUtil.UtcNow());
+
+        PlayerPrefs.SetString(LEGACY_LAST_CLOSED_KEY, DateTime.Now.ToString());
+
+        PlayerPrefs.Save();
     }
 }

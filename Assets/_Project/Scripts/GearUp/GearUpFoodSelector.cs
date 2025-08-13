@@ -15,154 +15,318 @@ public class GearUpFoodSelector : MonoBehaviour
     public GameObject foodSlotPrefab;
     public Transform gearUpFoodContent;
 
-    private HashSet<InventoryItemData> selectedItems = new HashSet<InventoryItemData>();
+    // Tracks how many of each food have been added to the Gear Up panel
+    private readonly Dictionary<InventoryItemData, int> gearUpSelectedCounts = new Dictionary<InventoryItemData, int>();
 
-    private void Start()
+    void Start()
     {
-        addFoodButton.onClick.AddListener(OpenFoodSelection);
-
-        if (backButton != null)
-            backButton.onClick.AddListener(CloseFoodSelection);
-
-        if (itemSelectionPanel != null)
-            itemSelectionPanel.SetActive(false);
+        if (addFoodButton != null) addFoodButton.onClick.AddListener(OpenFoodSelection);
+        if (backButton != null) backButton.onClick.AddListener(CloseFoodSelection);
+        if (itemSelectionPanel != null) itemSelectionPanel.SetActive(false);
     }
 
-    void OpenFoodSelection()
+    private void OpenFoodSelection()
     {
-        Debug.Log("Opening food selection...");
-
         itemSelectionPanel?.SetActive(true);
-        selectionTitle.text = "Select Food";
+        if (selectionTitle != null) selectionTitle.text = "Select Food";
 
-        foreach (Transform child in itemScrollViewContent)
-            Destroy(child.gameObject);
-
-        Dictionary<InventoryItemData, int> stashItems = StashManager.Instance?.stashItems;
-        if (stashItems == null)
-            return;
-
-        foreach (KeyValuePair<InventoryItemData, int> entry in stashItems)
+        // Clear old entries
+        if (itemScrollViewContent != null)
         {
-            InventoryItemData itemData = entry.Key;
-            int quantity = entry.Value;
+            for (int i = itemScrollViewContent.childCount - 1; i >= 0; i--)
+                Destroy(itemScrollViewContent.GetChild(i).gameObject);
+        }
 
-            if (itemData == null || quantity <= 0)
-                continue;
+        var stash = StashManager.Instance;
+        var stashItems = (stash != null) ? stash.stashItems : null;
+        if (stashItems == null) return;
 
-            if (itemData.category.Equals("Food", StringComparison.OrdinalIgnoreCase) &&
-                !selectedItems.Contains(itemData))
+        foreach (var kv in stashItems)
+        {
+            var data = kv.Key;
+            var qty = kv.Value;
+
+            if (data == null || qty <= 0) continue;
+            if (!string.Equals(data.category, "Food", StringComparison.OrdinalIgnoreCase)) continue;
+
+            var slotGO = Instantiate(foodSlotPrefab, itemScrollViewContent);
+            slotGO.name = "FoodSlot_" + SafeName(data.itemID) + "_" + Guid.NewGuid().ToString("N");
+
+            // Configure list slot visuals (icon, name, quantity, rarity)
+            SetupFoodSlotUI(slotGO.transform, data, qty);
+
+            // Selection list shows DropButton normally; RemoveButton not used here
+            ShowButton(slotGO.transform, "DropButton", true);
+            ShowButton(slotGO.transform, "RemoveButton", false);
+
+            var button = slotGO.GetComponent<Button>();
+            if (button != null)
             {
-                GameObject slotGO = Instantiate(foodSlotPrefab, itemScrollViewContent);
-                slotGO.name = "FoodSlot_" + itemData.itemName + "_" + Guid.NewGuid().ToString("N");
-
-                RectTransform rt = slotGO.GetComponent<RectTransform>();
-                if (rt != null)
-                {
-                    rt.localScale = Vector3.one;
-                    rt.anchoredPosition3D = Vector3.zero;
-                }
-
-                Transform itemInfo = slotGO.transform.Find("ItemInfo/Icon");
-                if (itemInfo != null)
-                {
-                    Image iconImage = itemInfo.GetComponent<Image>();
-                    if (iconImage != null)
-                    {
-                        iconImage.sprite = itemData.icon;
-                        iconImage.preserveAspect = true;
-                        iconImage.color = Color.white;
-                    }
-                }
-
-                ApplyRarityColor(slotGO.transform, itemData.rarity);
-
-                Button button = slotGO.GetComponent<Button>();
-                if (button != null)
-                {
-                    InventoryItemData capturedItem = itemData;
-                    button.onClick.AddListener(() => AddFoodToGearUp(capturedItem));
-                }
+                var captured = data;
+                button.onClick.RemoveAllListeners();
+                button.onClick.AddListener(() => AddFoodToGearUp(captured));
             }
         }
 
-        LayoutRebuilder.ForceRebuildLayoutImmediate(itemScrollViewContent.GetComponent<RectTransform>());
+        var rt = (itemScrollViewContent != null) ? itemScrollViewContent.GetComponent<RectTransform>() : null;
+        if (rt != null) LayoutRebuilder.ForceRebuildLayoutImmediate(rt);
     }
 
-    void AddFoodToGearUp(InventoryItemData itemData)
+    // Adds one unit of the selected food into Gear Up
+    private void AddFoodToGearUp(InventoryItemData itemData)
     {
-        Debug.Log("Adding food to GearUp panel: " + itemData.itemName);
+        if (itemData == null) return;
 
-        GameObject newFoodSlot = Instantiate(foodSlotPrefab, gearUpFoodContent);
-        newFoodSlot.name = "GearUpFood_" + itemData.itemName + "_" + Guid.NewGuid().ToString("N");
+        // 1) Register with selection manager so Confirm moves it into Inventory
+        var gsm = FindFirstObjectByType<GearUpSelectionManager>();
+        if (gsm != null) gsm.AddStackable(itemData, 1);
 
-        RectTransform rt = newFoodSlot.GetComponent<RectTransform>();
+        // 2) Update Gear Up counts and UI (aggregate by item)
+        int newCount = 1;
+        if (gearUpSelectedCounts.TryGetValue(itemData, out var existing))
+            newCount = existing + 1;
+        gearUpSelectedCounts[itemData] = newCount;
+
+        var slot = FindGearUpSlot(itemData);
+        if (slot == null)
+        {
+            slot = Instantiate(foodSlotPrefab, gearUpFoodContent);
+            slot.name = "GearUpFood_" + SafeName(itemData.itemID) + "_" + Guid.NewGuid().ToString("N");
+
+            SetupFoodSlotUI(slot.transform, itemData, newCount);
+
+            // In Gear Up: hide Drop, show Remove, wire Remove to subtract one
+            ShowButton(slot.transform, "DropButton", false);
+            WireRemoveButton(slot.transform, itemData);
+        }
+        else
+        {
+            UpdateFoodSlotQuantity(slot.transform, newCount);
+        }
+
+        // 3) Decrement from stash immediately so counts stay correct
+        var stash = StashManager.Instance;
+        if (stash != null)
+        {
+            if (!stash.stashItems.ContainsKey(itemData)) stash.stashItems[itemData] = 0;
+            stash.stashItems[itemData] = Mathf.Max(0, stash.stashItems[itemData] - 1);
+            if (stash.stashItems[itemData] <= 0) stash.stashItems.Remove(itemData);
+            StashManagerUI.Instance?.RefreshStashUI();
+        }
+
+        // 4) Refresh the selection list so remaining counts update
+        if (itemSelectionPanel != null && itemSelectionPanel.activeSelf)
+            OpenFoodSelection();
+    }
+
+    // Removes one unit of this food from Gear Up and restores it to stash
+    private void RemoveFoodFromGearUp(InventoryItemData itemData, int amount = 1)
+    {
+        if (itemData == null) return;
+
+        // 1) Update selection manager
+        var gsm = FindFirstObjectByType<GearUpSelectionManager>();
+        if (gsm != null) gsm.RemoveStackable(itemData, amount);
+
+        // 2) Update local counts and UI
+        int current;
+        if (!gearUpSelectedCounts.TryGetValue(itemData, out current)) return;
+
+        current -= amount;
+        if (current > 0)
+        {
+            gearUpSelectedCounts[itemData] = current;
+            var slot = FindGearUpSlot(itemData);
+            if (slot != null) UpdateFoodSlotQuantity(slot.transform, current);
+        }
+        else
+        {
+            gearUpSelectedCounts.Remove(itemData);
+            var slot = FindGearUpSlot(itemData);
+            if (slot != null) Destroy(slot);
+        }
+
+        // 3) Return to stash
+        var stash = StashManager.Instance;
+        if (stash != null)
+        {
+            if (!stash.stashItems.ContainsKey(itemData)) stash.stashItems[itemData] = 0;
+            stash.stashItems[itemData] += amount;
+            StashManagerUI.Instance?.RefreshStashUI();
+        }
+
+        // 4) If selection panel is open, refresh to reflect new counts
+        if (itemSelectionPanel != null && itemSelectionPanel.activeSelf)
+            OpenFoodSelection();
+    }
+
+    private GameObject FindGearUpSlot(InventoryItemData data)
+    {
+        if (gearUpFoodContent == null || data == null) return null;
+        string id = SafeName(data.itemID);
+        for (int i = 0; i < gearUpFoodContent.childCount; i++)
+        {
+            var child = gearUpFoodContent.GetChild(i).gameObject;
+            if (child != null && child.name.StartsWith("GearUpFood_" + id, StringComparison.Ordinal))
+                return child;
+        }
+        return null;
+    }
+
+    private void CloseFoodSelection()
+    {
+        itemSelectionPanel?.SetActive(false);
+    }
+
+    // Wire RemoveButton if present; fallback to slot click if not
+    private void WireRemoveButton(Transform slotRoot, InventoryItemData itemData)
+    {
+        // Show RemoveButton in Gear Up, hide DropButton
+        ShowButton(slotRoot, "DropButton", false);
+
+        var removeTf = slotRoot.Find("RemoveButton");
+        Button removeBtn = null;
+        if (removeTf != null) removeBtn = removeTf.GetComponent<Button>();
+
+        if (removeBtn != null)
+        {
+            removeTf.gameObject.SetActive(true);
+            removeBtn.onClick.RemoveAllListeners();
+            removeBtn.onClick.AddListener(() => RemoveFoodFromGearUp(itemData, 1));
+        }
+        else
+        {
+            // Fall back: clicking the slot removes one
+            var slotBtn = slotRoot.GetComponent<Button>();
+            if (slotBtn != null)
+            {
+                slotBtn.onClick.RemoveAllListeners();
+                slotBtn.onClick.AddListener(() => RemoveFoodFromGearUp(itemData, 1));
+            }
+        }
+    }
+
+    // Utility: show/hide a named child button in a slot
+    private void ShowButton(Transform root, string childName, bool visible)
+    {
+        if (root == null || string.IsNullOrEmpty(childName)) return;
+        var tf = root.Find(childName);
+        if (tf != null && tf.gameObject.activeSelf != visible)
+            tf.gameObject.SetActive(visible);
+    }
+
+    // Sets icon, name, quantity, and rarity color on a food slot
+    private void SetupFoodSlotUI(Transform slotRoot, InventoryItemData data, int quantity)
+    {
+        if (slotRoot == null || data == null) return;
+
+        // Icon
+        var iconTf = slotRoot.Find("ItemInfo/Icon");
+        if (iconTf != null)
+        {
+            var iconImg = iconTf.GetComponent<Image>();
+            if (iconImg != null)
+            {
+                iconImg.sprite = data.icon;
+                iconImg.preserveAspect = true;
+                iconImg.color = Color.white;
+            }
+        }
+
+        // Name
+        TextMeshProUGUI nameText = null;
+        var nameTf = slotRoot.Find("ItemInfo/NameText");
+        if (nameTf != null) nameText = nameTf.GetComponent<TextMeshProUGUI>();
+        if (nameText == null)
+        {
+            var itemInfo = slotRoot.Find("ItemInfo");
+            if (itemInfo != null)
+            {
+                var tmps = itemInfo.GetComponentsInChildren<TextMeshProUGUI>(true);
+                for (int i = 0; i < tmps.Length; i++)
+                {
+                    if (tmps[i].name.IndexOf("Name", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        nameText = tmps[i];
+                        break;
+                    }
+                }
+                if (nameText == null && tmps.Length > 0) nameText = tmps[0];
+            }
+        }
+        if (nameText != null) nameText.text = data.itemName;
+
+        // Quantity text
+        UpdateFoodSlotQuantity(slotRoot, quantity);
+
+        // Rarity color
+        ApplyRarityColor(slotRoot, data.rarity);
+
+        // Normalize transform basics
+        var rt = slotRoot.GetComponent<RectTransform>();
         if (rt != null)
         {
             rt.localScale = Vector3.one;
             rt.anchoredPosition3D = Vector3.zero;
         }
 
-        Transform iconTransform = newFoodSlot.transform.Find("ItemInfo/Icon");
-        if (iconTransform != null)
-        {
-            Image iconImage = iconTransform.GetComponent<Image>();
-            if (iconImage != null)
-            {
-                iconImage.sprite = itemData.icon;
-                iconImage.preserveAspect = true;
-                iconImage.color = Color.white;
-            }
-        }
-
-        ApplyRarityColor(newFoodSlot.transform, itemData.rarity);
-
-        // Track this item so it doesn't show up again
-        selectedItems.Add(itemData);
-
-        // Subtract from stash
-        if (StashManager.Instance != null)
-        {
-            if (StashManager.Instance.stashItems.ContainsKey(itemData))
-            {
-                StashManager.Instance.stashItems[itemData] -= 1;
-                if (StashManager.Instance.stashItems[itemData] <= 0)
-                    StashManager.Instance.stashItems.Remove(itemData);
-            }
-        }
-
-        CloseFoodSelection();
+        // Ensure Gear Up button visibility logic (Drop off, Remove on)
+        ShowButton(slotRoot, "DropButton", false);
+        var removeTf = slotRoot.Find("RemoveButton");
+        if (removeTf != null) removeTf.gameObject.SetActive(true);
     }
 
-    void CloseFoodSelection()
+    private void UpdateFoodSlotQuantity(Transform slotRoot, int quantity)
     {
-        itemSelectionPanel?.SetActive(false);
-        Debug.Log("Closed food selection.");
+        if (slotRoot == null) return;
+
+        TextMeshProUGUI qtyText = null;
+        var qtyTf = slotRoot.Find("ItemInfo/QuantityText");
+        if (qtyTf != null) qtyText = qtyTf.GetComponent<TextMeshProUGUI>();
+        if (qtyText == null)
+        {
+            var itemInfo = slotRoot.Find("ItemInfo");
+            if (itemInfo != null)
+            {
+                var tmps = itemInfo.GetComponentsInChildren<TextMeshProUGUI>(true);
+                for (int i = 0; i < tmps.Length; i++)
+                {
+                    if (tmps[i].name.IndexOf("Quantity", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        qtyText = tmps[i];
+                        break;
+                    }
+                }
+            }
+        }
+        if (qtyText != null) qtyText.text = "x" + Mathf.Max(1, quantity).ToString();
     }
 
     private void ApplyRarityColor(Transform slot, ItemRarity rarity)
     {
-        Slider raritySlider = slot.GetComponentInChildren<Slider>();
+        var raritySlider = slot.GetComponentInChildren<Slider>(true);
         if (raritySlider != null && raritySlider.fillRect != null)
         {
-            Image fillImage = raritySlider.fillRect.GetComponent<Image>();
+            var fillImage = raritySlider.fillRect.GetComponent<Image>();
             if (fillImage != null)
             {
-                Color fillColor = GetColorForRarity(rarity);
+                var fillColor = RarityColors.GetColor(rarity);
                 fillImage.color = fillColor;
 
-                foreach (Image img in raritySlider.GetComponentsInChildren<Image>())
+                var all = raritySlider.GetComponentsInChildren<Image>(true);
+                for (int i = 0; i < all.Length; i++)
                 {
-                    if (img != fillImage)
-                        img.color = DarkenColor(fillColor, 0.75f);
+                    if (all[i] != fillImage)
+                        all[i].color = DarkenColor(fillImage.color, 0.75f);
                 }
             }
         }
     }
 
-    private Color GetColorForRarity(ItemRarity rarity)
+    private static string SafeName(string s)
     {
-        return RarityColors.GetColor(rarity);
+        if (string.IsNullOrEmpty(s)) return "NULL";
+        return s.Replace(" ", "");
     }
 
     private Color DarkenColor(Color color, float factor)

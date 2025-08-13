@@ -45,6 +45,16 @@ public class ExplorationDialogueManager : MonoBehaviour
     private float delayTimer = 0f;
     private bool delayPassed = false;
 
+    private void Awake()
+    {
+        enabled = false;
+    }
+
+    private void Update()
+    {
+        UpdateDialogue(Time.deltaTime);
+    }
+
     public void UpdateDialogue(float deltaTime)
     {
         if (!isExploring)
@@ -84,6 +94,17 @@ public class ExplorationDialogueManager : MonoBehaviour
         delayTimer = 0f;
         dialogueTimer = 0f;
         gameObject.SetActive(true);
+        enabled = true;
+    }
+
+    public void StartExplorationDialogue()
+    {
+        isExploring = true;
+        delayPassed = false;
+        delayTimer = 0f;
+        dialogueTimer = 0f;
+        enabled = true;
+        gameObject.SetActive(true);
     }
 
     public void StopExploration()
@@ -92,6 +113,7 @@ public class ExplorationDialogueManager : MonoBehaviour
         ClearFoundItemsQueue();
         ClearDialogue();
         gameObject.SetActive(false);
+        enabled = false;
     }
 
     public void ClearDialogue()
@@ -112,6 +134,7 @@ public class ExplorationDialogueManager : MonoBehaviour
         ClearDialogue();
         ClearFoundItemsQueue();
         gameObject.SetActive(true);
+        enabled = true;
     }
 
     void ShowRandomLine()

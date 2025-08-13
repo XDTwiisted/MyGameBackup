@@ -369,6 +369,7 @@ MonoBehaviour:
   - {fileID: 1764490778}
   - {fileID: 0}
   - {fileID: 235024242}
+  startCategory: 
 --- !u!4 &38953674
 Transform:
   m_ObjectHideFlags: 0
@@ -896,6 +897,7 @@ GameObject:
   m_Component:
   - component: {fileID: 98311843}
   - component: {fileID: 98311844}
+  - component: {fileID: 98311845}
   m_Layer: 5
   m_Name: TabBar
   m_TagString: Untagged
@@ -953,6 +955,20 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &98311845
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 98311842}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94cbc165ac9e143418c81194cc876c59, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  categoryButtons: []
+  startCategory: 
 --- !u!1 &99010212
 GameObject:
   m_ObjectHideFlags: 0
@@ -2305,8 +2321,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   categoryName: Misc
   button: {fileID: 235024239}
-  activeColor: {r: 0, g: 1, b: 0, a: 1}
-  inactiveColor: {r: 1, g: 1, b: 1, a: 1}
+  activeBgColor: {r: 1, g: 1, b: 1, a: 1}
+  inactiveBgColor: {r: 1, g: 1, b: 1, a: 0.15}
+  activeTextColor: {r: 0, g: 0, b: 0, a: 1}
+  inactiveTextColor: {r: 1, g: 1, b: 1, a: 0.7}
 --- !u!1 &238688125
 GameObject:
   m_ObjectHideFlags: 0
@@ -3782,19 +3800,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 395982598}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 302684579}
-        m_TargetAssemblyTypeName: InventoryUIManager, Assembly-CSharp
-        m_MethodName: ToggleInventory
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &395982598
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4843,8 +4849,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   categoryName: Tools
   button: {fileID: 553488149}
-  activeColor: {r: 0, g: 1, b: 0, a: 1}
-  inactiveColor: {r: 1, g: 1, b: 1, a: 1}
+  activeBgColor: {r: 1, g: 1, b: 1, a: 1}
+  inactiveBgColor: {r: 1, g: 1, b: 1, a: 0.15}
+  activeTextColor: {r: 0, g: 0, b: 0, a: 1}
+  inactiveTextColor: {r: 1, g: 1, b: 1, a: 0.7}
 --- !u!114 &553488149
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5094,6 +5102,7 @@ GameObject:
   m_Component:
   - component: {fileID: 596178458}
   - component: {fileID: 596178459}
+  - component: {fileID: 596178460}
   m_Layer: 5
   m_Name: TabBar
   m_TagString: Untagged
@@ -5151,6 +5160,20 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &596178460
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 596178457}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94cbc165ac9e143418c81194cc876c59, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  categoryButtons: []
+  startCategory: 
 --- !u!1 &598870368
 GameObject:
   m_ObjectHideFlags: 0
@@ -5508,8 +5531,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   categoryName: Weapons
   button: {fileID: 630629028}
-  activeColor: {r: 0, g: 1, b: 0, a: 1}
-  inactiveColor: {r: 1, g: 1, b: 1, a: 1}
+  activeBgColor: {r: 1, g: 1, b: 1, a: 1}
+  inactiveBgColor: {r: 1, g: 1, b: 1, a: 0.15}
+  activeTextColor: {r: 0, g: 0, b: 0, a: 1}
+  inactiveTextColor: {r: 1, g: 1, b: 1, a: 0.7}
 --- !u!114 &630629028
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6504,8 +6529,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   categoryName: Tools
   button: {fileID: 818520939}
-  activeColor: {r: 0, g: 1, b: 0, a: 1}
-  inactiveColor: {r: 1, g: 1, b: 1, a: 1}
+  activeBgColor: {r: 1, g: 1, b: 1, a: 1}
+  inactiveBgColor: {r: 1, g: 1, b: 1, a: 0.15}
+  activeTextColor: {r: 0, g: 0, b: 0, a: 1}
+  inactiveTextColor: {r: 1, g: 1, b: 1, a: 0.7}
 --- !u!1 &831517289
 GameObject:
   m_ObjectHideFlags: 0
@@ -6735,6 +6762,37 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 718.5005, y: 1762.4274, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &922950958
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 922950959}
+  m_Layer: 0
+  m_Name: UI
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &922950959
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 922950958}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 430.19067, y: 952.60284, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7792,8 +7850,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   categoryName: Misc
   button: {fileID: 1167604107}
-  activeColor: {r: 0, g: 1, b: 0, a: 1}
-  inactiveColor: {r: 1, g: 1, b: 1, a: 1}
+  activeBgColor: {r: 1, g: 1, b: 1, a: 1}
+  inactiveBgColor: {r: 1, g: 1, b: 1, a: 0.15}
+  activeTextColor: {r: 0, g: 0, b: 0, a: 1}
+  inactiveTextColor: {r: 1, g: 1, b: 1, a: 0.7}
 --- !u!114 &1167604107
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9420,8 +9480,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   categoryName: Food
   button: {fileID: 1430140458}
-  activeColor: {r: 0, g: 1, b: 0, a: 1}
-  inactiveColor: {r: 1, g: 1, b: 1, a: 1}
+  activeBgColor: {r: 1, g: 1, b: 1, a: 1}
+  inactiveBgColor: {r: 1, g: 1, b: 1, a: 0.15}
+  activeTextColor: {r: 0, g: 0, b: 0, a: 1}
+  inactiveTextColor: {r: 1, g: 1, b: 1, a: 0.7}
 --- !u!114 &1430140458
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9640,8 +9702,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   categoryName: Weapons
   button: {fileID: 1449510514}
-  activeColor: {r: 0, g: 1, b: 0, a: 1}
-  inactiveColor: {r: 1, g: 1, b: 1, a: 1}
+  activeBgColor: {r: 1, g: 1, b: 1, a: 1}
+  inactiveBgColor: {r: 1, g: 1, b: 1, a: 0.15}
+  activeTextColor: {r: 0, g: 0, b: 0, a: 1}
+  inactiveTextColor: {r: 1, g: 1, b: 1, a: 0.7}
 --- !u!1 &1457545845
 GameObject:
   m_ObjectHideFlags: 0
@@ -11358,8 +11422,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   categoryName: Food
   button: {fileID: 1764490775}
-  activeColor: {r: 0, g: 1, b: 0, a: 1}
-  inactiveColor: {r: 1, g: 1, b: 1, a: 1}
+  activeBgColor: {r: 1, g: 1, b: 1, a: 1}
+  inactiveBgColor: {r: 1, g: 1, b: 1, a: 0.15}
+  activeTextColor: {r: 0, g: 0, b: 0, a: 1}
+  inactiveTextColor: {r: 1, g: 1, b: 1, a: 0.7}
 --- !u!1 &1764561590
 GameObject:
   m_ObjectHideFlags: 0
@@ -12509,7 +12575,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 08a54bfa77171104ea7cd89ff99c8768, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lootChance: 0.221
+  lootChance: 0.02
   rarityChances:
   - rarity: 0
     dropChance: 70
@@ -12652,8 +12718,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   categoryName: Health
   button: {fileID: 2027848356}
-  activeColor: {r: 0, g: 1, b: 0, a: 1}
-  inactiveColor: {r: 1, g: 1, b: 1, a: 1}
+  activeBgColor: {r: 1, g: 1, b: 1, a: 1}
+  inactiveBgColor: {r: 1, g: 1, b: 1, a: 0.15}
+  activeTextColor: {r: 0, g: 0, b: 0, a: 1}
+  inactiveTextColor: {r: 1, g: 1, b: 1, a: 0.7}
 --- !u!114 &2027848356
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13289,8 +13357,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   categoryName: Health
   button: {fileID: 2093056708}
-  activeColor: {r: 0, g: 1, b: 0, a: 1}
-  inactiveColor: {r: 1, g: 1, b: 1, a: 1}
+  activeBgColor: {r: 1, g: 1, b: 1, a: 1}
+  inactiveBgColor: {r: 1, g: 1, b: 1, a: 0.15}
+  activeTextColor: {r: 0, g: 0, b: 0, a: 1}
+  inactiveTextColor: {r: 1, g: 1, b: 1, a: 0.7}
 --- !u!114 &2093056708
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13928,3 +13998,4 @@ SceneRoots:
   - {fileID: 2650753}
   - {fileID: 85227821}
   - {fileID: 227652558}
+  - {fileID: 922950959}
